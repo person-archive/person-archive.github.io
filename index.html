@@ -70,7 +70,7 @@ document.getElementById('roleInput').addEventListener('keydown', (e) => {
 
 async function doSearch() {
   const query = queryInput.value.trim();
-  const role = document.getElementById('roleInput').value.trim();
+  const role  = document.getElementById('roleInput').value.trim();
 
   if (!query && !role) { queryInput.focus(); return; }
 
@@ -78,8 +78,11 @@ async function doSearch() {
   resultsArea.innerHTML = '<div class="status"><span class="spinner"></span>検索中…</div>';
 
   try {
-    const apiQuery = query || role;
-    const url = `${API_BASE}?q=${encodeURIComponent(apiQuery)}&max=99999`;
+    const params = new URLSearchParams({ max: 99999 });
+    if (query) params.set('q', query);
+    if (role)  params.set('role', role);
+    const url = `${API_BASE}?${params}`;
+
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const rawText = await res.text();
@@ -91,21 +94,8 @@ async function doSearch() {
       return;
     }
 
-    let results = data.results || [];
-
-    if (role) {
-      const roleLower = role.toLowerCase();
-      results = results.filter(person => {
-        if (!person.roles || !Array.isArray(person.roles)) return false;
-        return person.roles.some(r => {
-          const t = typeof r === 'string' ? r : (r.role || r.name || r.title || '');
-          return String(t).toLowerCase().includes(roleLower);
-        });
-      });
-    }
-
-    allResults = results;
-    lastResults = results;
+    allResults = data.results || [];
+    lastResults = allResults;
     currentPage = 1;
     currentDisplayQuery = [query, role].filter(Boolean).join(' ');
     renderPage();
