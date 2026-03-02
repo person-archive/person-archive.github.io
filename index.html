@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>人物検索</title>
+<title>近世近代人名アーカイブス</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -464,23 +464,21 @@
 
 <div class="container">
   <header>
-    <h1>人物検索</h1>
+    <h1>近世近代人名アーカイブス</h1>
     <p>キーワードを入力して検索（スペース区切りでAND検索）</p>
   </header>
 
   <div class="search-area">
     <div class="search-box">
-      <input type="text" id="queryInput" placeholder="例：石田頼慶" autofocus>
+      <input type="text" id="queryInput" placeholder="" autofocus>
       <button id="searchBtn" onclick="doSearch()">検 索</button>
     </div>
     <div class="search-options">
       <label for="maxSelect">表示件数</label>
       <select id="maxSelect">
-        <option value="10">10件</option>
-        <option value="20">20件</option>
         <option value="50">50件</option>
-        <option value="100" selected>100件</option>
-        <option value="99999">無制限</option>
+        <option value="100">100件</option>
+        <option value="99999" selected>無制限</option>
       </select>
       <span class="hint">Enter で検索</span>
     </div>
@@ -488,7 +486,8 @@
 
   <div id="resultsArea"></div>
 
-  <footer>Powered by Google Apps Script API</footer>
+  <footer>Copyright © Nagoya University All Rights Reserved.<br>
+          Research Group on Japanese Early Modern-Modern Continuity (JEMMCO)</footer>
 </div>
 
 <script>
