@@ -4,46 +4,58 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>近世近代人名アーカイブス</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['"Noto Sans JP"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        }
+      }
+    }
+  }
+</script>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="bg-gray-50 text-gray-900 min-h-screen font-sans">
 
-<div class="container">
-  <header>
-    <h1>近世近代人名アーカイブス</h1>
-    <p>スペース区切りでAND検索。役職・肩書と組み合わせて絞り込めます</p>
+<div class="max-w-2xl mx-auto px-4 py-12">
+
+  <header class="mb-10 fade-down">
+    <h1 class="text-2xl font-bold text-gray-900 tracking-wide">近世近代人名アーカイブス</h1>
   </header>
 
-  <div class="search-area">
-    <div class="search-main-row">
-      <input type="text" id="queryInput" placeholder="フリーワード" autofocus>
-      <button id="searchBtn" class="search-btn-main" onclick="doSearch()">検 索</button>
+  <div class="mb-8 fade-down-delay">
+    <div class="flex rounded-lg border border-gray-300 bg-white overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
+      <input type="text" id="queryInput" placeholder="フリーワード検索" autofocus
+        class="flex-1 px-4 py-3 outline-none text-base bg-transparent text-gray-900 placeholder-gray-400 font-sans">
+      <button id="searchBtn" onclick="doSearch()"
+        class="px-6 py-3 bg-blue-600 text-white text-base font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 border-0 cursor-pointer font-sans">
+        検索
+      </button>
     </div>
-    <div class="search-sub-row">
-      <span class="sub-label">役職・肩書</span>
-      <input type="text" id="roleInput" placeholder="例：大阪府　士族">
+    <div class="flex items-center gap-2 mt-2">
+      <label class="text-sm text-gray-600 flex-shrink-0">役職・肩書</label>
+      <input type="text" id="roleInput" placeholder="例：大阪府　士族"
+        class="flex-1 px-3 py-2.5 border border-gray-300 rounded-md outline-none text-base bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-sans">
     </div>
   </div>
 
   <div id="resultsArea"></div>
 
-  <footer class="footer">
-    <div class="footer-content">
-      <div class="footer-left">
-        <div class="cc-license">
-          <div class="copyright-text">
-            Copyright © Nagoya University<br>
-            Research Group on Japanese Early Modern-Modern Continuity (JEMMCO)
-          </div>
-          <div class="cc-license-row">
-            <img src="https://licensebuttons.net/l/by/4.0/88x31.png" alt="Creative Commons License" class="cc-logo">
-            <span>このデータベースは、<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">クリエイティブ・コモンズ 表示 4.0 ライセンス</a>のもとで利用できます。</span>
-          </div>
-        </div>
-      </div>
+  <footer class="mt-16 pt-6 border-t border-gray-200 text-sm text-gray-500">
+    <p class="leading-relaxed">
+      Copyright © Nagoya University<br>
+      Research Group on Japanese Early Modern-Modern Continuity (JEMMCO)
+    </p>
+    <div class="flex items-center gap-2 mt-3 flex-wrap leading-relaxed">
+      <img src="https://licensebuttons.net/l/by/4.0/88x31.png" alt="Creative Commons License" class="flex-shrink-0">
+      <span>このデータベースは<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">クリエイティブ・コモンズ 表示 4.0 ライセンス</a>のもとで利用できます。</span>
     </div>
   </footer>
+
 </div>
 
 <script>
@@ -55,8 +67,8 @@ const resultsArea = document.getElementById('resultsArea');
 
 const PAGE_SIZE = 50;
 let lastRawJson = '';
-let lastResults = [];   // 全件（コピー用）
-let allResults = [];    // フィルタ後の全件
+let lastResults = [];
+let allResults = [];
 let currentPage = 1;
 let currentDisplayQuery = '';
 
@@ -122,6 +134,72 @@ function goToPage(page) {
   resultsArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function renderEntry(entry, keywords) {
+  let html = '';
+
+  if (entry.source) {
+    html += `<div class="detail-section">`;
+    if (Array.isArray(entry.source)) {
+      entry.source.forEach(src => { html += renderSourceLink(src, keywords); });
+    } else {
+      html += renderSourceLink(entry.source, keywords);
+    }
+    html += `</div>`;
+  }
+
+  if (entry.roles && Array.isArray(entry.roles) && entry.roles.length > 0) {
+    html += `<div class="detail-section"><div>`;
+    entry.roles.forEach(r => {
+      const roleText = typeof r === 'string' ? r : (r.role || r.name || r.title || JSON.stringify(r));
+      html += `<span class="role-tag">${highlightText(escapeHtml(String(roleText)), keywords)}</span>`;
+    });
+    html += `</div></div>`;
+  }
+
+  if (entry.events && Array.isArray(entry.events) && entry.events.length > 0) {
+    html += `<div class="detail-section"><ul>`;
+    entry.events.forEach(ev => {
+      if (typeof ev === 'string') {
+        html += `<li>${highlightText(escapeHtml(ev), keywords)}</li>`;
+      } else if (typeof ev === 'object' && ev !== null) {
+        const date = ev.date || ev['日付'] || ev.year || '';
+        const desc = ev.description || ev.event || ev['内容'] || ev.title || ev.name || '';
+        const rest = Object.entries(ev)
+          .filter(([k]) => !['date','日付','year','description','event','内容','title','name'].includes(k))
+          .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
+          .join('　');
+        const fullDesc = [desc, rest].filter(Boolean).join('　');
+        if (date) {
+          html += `<li><div class="event-item">
+            <span class="event-date">${highlightText(escapeHtml(String(date)), keywords)}</span>
+            <span class="event-desc">${highlightText(escapeHtml(String(fullDesc || '—')), keywords)}</span>
+          </div></li>`;
+        } else {
+          html += `<li>${highlightText(escapeHtml(fullDesc || JSON.stringify(ev)), keywords)}</li>`;
+        }
+      }
+    });
+    html += `</ul></div>`;
+  }
+
+  const skipKeys = new Set(['name','名前','氏名','id','ID','roles','events','source']);
+  const otherEntries = Object.entries(entry).filter(([k]) => !skipKeys.has(k));
+  if (otherEntries.length > 0) {
+    html += `<div class="detail-section">`;
+    otherEntries.forEach(([k, v]) => {
+      const val = typeof v === 'object' ? JSON.stringify(v, null, 1) : String(v ?? '');
+      if (!val) return;
+      html += `<div class="field">
+        <span class="field-key">${escapeHtml(k)}</span>
+        <span class="field-value">${highlightText(escapeHtml(val), keywords)}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  return html;
+}
+
 function renderResults(results, total, totalPages, query) {
   if (total === 0) {
     resultsArea.innerHTML = `
@@ -144,79 +222,30 @@ function renderResults(results, total, totalPages, query) {
       </div>
     </div>`;
 
-  results.forEach((person, i) => {
+  results.forEach((group, i) => {
     const globalIndex = pageStart + i;
-    const name = person.name || person['名前'] || person['氏名'] || '不明';
-    const id = person.id || person['ID'] || '';
-    const titleText = id ? `${name}（${id}）` : name;
+    const name    = group.canonical_name || '不明';
+    const entries = group.entries || [];
+    const badge   = entries.length > 1
+      ? `<span class="entry-badge">史料 ${entries.length}件</span>`
+      : '';
 
     html += `
       <div class="result-card" style="animation-delay: ${i * 0.04}s" onclick="toggleCard(event, this)">
         <div class="card-summary">
           <div class="card-number">${globalIndex + 1}</div>
-          <div class="card-title">${highlightText(escapeHtml(titleText), keywords)}</div>
+          <div class="card-title">${highlightText(escapeHtml(name), keywords)}${badge}</div>
           <span class="chevron">▶</span>
         </div>
         <div class="card-detail" onclick="event.stopPropagation()">`;
 
-    if (person.roles && Array.isArray(person.roles) && person.roles.length > 0) {
-      html += `<div class="detail-section"><div>`;
-      person.roles.forEach(r => {
-        const roleText = typeof r === 'string' ? r : (r.role || r.name || r.title || JSON.stringify(r));
-        html += `<span class="role-tag">${highlightText(escapeHtml(String(roleText)), keywords)}</span>`;
+    if (entries.length > 1) {
+      entries.forEach((entry, ei) => {
+        html += `<div class="entry-divider">史料 ${ei + 1}（${escapeHtml(entry.id || '')}）</div>`;
+        html += renderEntry(entry, keywords);
       });
-      html += `</div></div>`;
-    }
-
-    if (person.events && Array.isArray(person.events) && person.events.length > 0) {
-      html += `<div class="detail-section"><ul>`;
-      person.events.forEach(ev => {
-        if (typeof ev === 'string') {
-          html += `<li>${highlightText(escapeHtml(ev), keywords)}</li>`;
-        } else if (typeof ev === 'object' && ev !== null) {
-          const date = ev.date || ev['日付'] || ev.year || '';
-          const desc = ev.description || ev.event || ev['内容'] || ev.title || ev.name || '';
-          const rest = Object.entries(ev)
-            .filter(([k]) => !['date','日付','year','description','event','内容','title','name'].includes(k))
-            .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
-            .join('　');
-          const fullDesc = [desc, rest].filter(Boolean).join('　');
-          if (date) {
-            html += `<li><div class="event-item">
-              <span class="event-date">${highlightText(escapeHtml(String(date)), keywords)}</span>
-              <span class="event-desc">${highlightText(escapeHtml(String(fullDesc || '—')), keywords)}</span>
-            </div></li>`;
-          } else {
-            html += `<li>${highlightText(escapeHtml(fullDesc || JSON.stringify(ev)), keywords)}</li>`;
-          }
-        }
-      });
-      html += `</ul></div>`;
-    }
-
-    if (person.source) {
-      html += `<div class="detail-section">`;
-      if (Array.isArray(person.source)) {
-        person.source.forEach(src => { html += renderSourceLink(src, keywords); });
-      } else {
-        html += renderSourceLink(person.source, keywords);
-      }
-      html += `</div>`;
-    }
-
-    const skipKeys = new Set(['name','名前','氏名','id','ID','roles','events','source']);
-    const otherEntries = Object.entries(person).filter(([k]) => !skipKeys.has(k));
-    if (otherEntries.length > 0) {
-      html += `<div class="detail-section">`;
-      otherEntries.forEach(([k, v]) => {
-        const val = typeof v === 'object' ? JSON.stringify(v, null, 1) : String(v ?? '');
-        if (!val) return;
-        html += `<div class="field">
-          <span class="field-key">${escapeHtml(k)}</span>
-          <span class="field-value">${highlightText(escapeHtml(val), keywords)}</span>
-        </div>`;
-      });
-      html += `</div>`;
+    } else if (entries.length === 1) {
+      html += renderEntry(entries[0], keywords);
     }
 
     html += `
@@ -260,7 +289,7 @@ function highlightText(text, keywords) {
   for (const kw of keywords) {
     const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(${escaped})`, 'gi');
-    result = result.replace(regex, '<mark style="background:#f6d365;color:#1a1a2e;padding:0 2px;border-radius:2px;">$1</mark>');
+    result = result.replace(regex, '<mark style="background:#fef08a;color:#1f2937;padding:0 2px;border-radius:2px;">$1</mark>');
   }
   return result;
 }
@@ -277,48 +306,49 @@ function toggleCard(event, card) {
   card.classList.toggle('open');
 }
 
-function formatPersonText(person) {
+function formatEntryText(entry) {
   const lines = [];
-  const name = person.name || person['名前'] || person['氏名'] || '';
-  const id = person.id || person['ID'] || '';
-  if (name) lines.push(`名前: ${name}`);
-  if (id) lines.push(`ID: ${id}`);
-
-  if (person.roles && Array.isArray(person.roles) && person.roles.length > 0) {
-    const roleTexts = person.roles.map(r =>
+  if (entry.roles && Array.isArray(entry.roles) && entry.roles.length > 0) {
+    const roleTexts = entry.roles.map(r =>
       typeof r === 'string' ? r : (r.role || r.name || r.title || JSON.stringify(r))
     );
-    lines.push(`Roles: ${roleTexts.join(', ')}`);
+    lines.push(`役職: ${roleTexts.join(', ')}`);
   }
-
-  if (person.events && Array.isArray(person.events) && person.events.length > 0) {
-    lines.push('Events:');
-    person.events.forEach(ev => {
+  if (entry.events && Array.isArray(entry.events) && entry.events.length > 0) {
+    lines.push('経歴:');
+    entry.events.forEach(ev => {
       if (typeof ev === 'string') {
         lines.push(`  ${ev}`);
       } else if (typeof ev === 'object' && ev !== null) {
         const date = ev.date || ev['日付'] || ev.year || '';
         const desc = ev.description || ev.event || ev['内容'] || ev.title || ev.name || '';
-        const rest = Object.entries(ev)
-          .filter(([k]) => !['date','日付','year','description','event','内容','title','name'].includes(k))
-          .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
-          .join(' ');
-        const fullDesc = [desc, rest].filter(Boolean).join(' ');
-        lines.push(`  ${date ? date + ' ' : ''}${fullDesc || JSON.stringify(ev)}`);
+        lines.push(`  ${date ? date + ' ' : ''}${desc || JSON.stringify(ev)}`);
       }
     });
   }
-
-  if (person.source) {
-    const sources = Array.isArray(person.source) ? person.source : [person.source];
-    lines.push(`Source: ${sources.map(s => typeof s === 'string' ? s : (s.url || s.title || JSON.stringify(s))).join(', ')}`);
+  if (entry.source) {
+    const sources = Array.isArray(entry.source) ? entry.source : [entry.source];
+    lines.push(`出典: ${sources.map(s => typeof s === 'string' ? s : (s.url || s.title || JSON.stringify(s))).join(', ')}`);
   }
+  return lines.join('\n');
+}
 
-  const skipKeys = new Set(['name','名前','氏名','id','ID','roles','events','source']);
-  Object.entries(person).filter(([k]) => !skipKeys.has(k)).forEach(([k, v]) => {
-    const val = typeof v === 'object' ? JSON.stringify(v) : String(v ?? '');
-    if (val) lines.push(`${k}: ${val}`);
-  });
+function formatPersonText(group) {
+  const lines = [];
+  const name = group.canonical_name || '';
+  const id   = group.canonical_id   || '';
+  if (name) lines.push(`名前: ${name}`);
+  if (id)   lines.push(`ID: ${id}`);
+
+  const entries = group.entries || [];
+  if (entries.length === 1) {
+    lines.push(formatEntryText(entries[0]));
+  } else {
+    entries.forEach((entry, i) => {
+      lines.push(`\n--- 史料 ${i + 1}（${entry.id || ''}）---`);
+      lines.push(formatEntryText(entry));
+    });
+  }
 
   return lines.join('\n');
 }
