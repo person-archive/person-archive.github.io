@@ -137,15 +137,36 @@
 
 .source-link:hover { opacity: 0.75; text-decoration: underline; }
 
-.role-tag {
+.role-tag,
+.add-name-tag,
+.seg-tag,
+.place-tag {
   display: inline-block;
   padding: 2px 10px;
   margin: 2px 4px 2px 0;
-  background: var(--accent-soft);
   border-radius: 4px;
   font-size: 0.875rem;
-  color: var(--accent);
   font-weight: 500;
+}
+
+.role-tag {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.add-name-tag {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.seg-tag {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.place-tag {
+  background: #f3e8ff;
+  color: #7e22ce;
 }
 
 .field { display: flex; gap: 10px; font-size: 0.9375rem; padding: 4px 0; }

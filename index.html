@@ -37,8 +37,23 @@
       </button>
     </div>
     <div class="flex items-center gap-2 mt-2">
+      <label class="text-sm text-gray-600 flex-shrink-0">氏名</label>
+      <input type="text" id="nameInput" placeholder="例：菱田重禧"
+        class="flex-1 px-3 py-2.5 border border-gray-300 rounded-md outline-none text-base bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-sans">
+    </div>
+    <div class="flex items-center gap-2 mt-2">
       <label class="text-sm text-gray-600 flex-shrink-0">役職・肩書</label>
       <input type="text" id="roleInput" placeholder="例：大阪府　士族"
+        class="flex-1 px-3 py-2.5 border border-gray-300 rounded-md outline-none text-base bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-sans">
+    </div>
+    <div class="flex items-center gap-2 mt-2">
+      <label class="text-sm text-gray-600 flex-shrink-0">別名</label>
+      <input type="text" id="addNameInput" placeholder="例：通称・旧名"
+        class="flex-1 px-3 py-2.5 border border-gray-300 rounded-md outline-none text-base bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-sans">
+    </div>
+    <div class="flex items-center gap-2 mt-2">
+      <label class="text-sm text-gray-600 flex-shrink-0">略歴</label>
+      <input type="text" id="eventsInput" placeholder="例：任青森縣権令"
         class="flex-1 px-3 py-2.5 border border-gray-300 rounded-md outline-none text-base bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-sans">
     </div>
   </div>
@@ -80,19 +95,37 @@ document.getElementById('roleInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') doSearch();
 });
 
-async function doSearch() {
-  const query = queryInput.value.trim();
-  const role  = document.getElementById('roleInput').value.trim();
+document.getElementById('nameInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') doSearch();
+});
 
-  if (!query && !role) { queryInput.focus(); return; }
+document.getElementById('addNameInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') doSearch();
+});
+
+document.getElementById('eventsInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') doSearch();
+});
+
+async function doSearch() {
+  const query   = queryInput.value.trim();
+  const name    = document.getElementById('nameInput').value.trim();
+  const role    = document.getElementById('roleInput').value.trim();
+  const addName = document.getElementById('addNameInput').value.trim();
+  const events  = document.getElementById('eventsInput').value.trim();
+
+  if (!query && !role && !name && !addName && !events) { queryInput.focus(); return; }
 
   searchBtn.disabled = true;
   resultsArea.innerHTML = '<div class="status"><span class="spinner"></span>検索中…</div>';
 
   try {
     const params = new URLSearchParams({ max: 99999 });
-    if (query) params.set('q', query);
-    if (role)  params.set('role', role);
+    if (query)   params.set('q', query);
+    if (name)    params.set('name', name);
+    if (role)    params.set('role', role);
+    if (addName) params.set('add_name', addName);
+    if (events)  params.set('events', events);
     const url = `${API_BASE}?${params}`;
 
     const res = await fetch(url);
@@ -109,7 +142,7 @@ async function doSearch() {
     allResults = data.results || [];
     lastResults = allResults;
     currentPage = 1;
-    currentDisplayQuery = [query, role].filter(Boolean).join(' ');
+    currentDisplayQuery = [query, name, role, addName, events].filter(Boolean).join(' ');
     renderPage();
   } catch (err) {
     resultsArea.innerHTML = `<div class="status error">エラーが発生しました: ${escapeHtml(err.message)}</div>`;
@@ -147,12 +180,34 @@ function renderEntry(entry, keywords) {
     html += `</div>`;
   }
 
-  if (entry.roles && Array.isArray(entry.roles) && entry.roles.length > 0) {
+  const hasRoles   = entry.roles     && Array.isArray(entry.roles)     && entry.roles.length > 0;
+  const hasAddName = entry.add_name  && Array.isArray(entry.add_name)  && entry.add_name.length > 0;
+  const hasSeg     = entry.seg       && Array.isArray(entry.seg)       && entry.seg.length > 0;
+  const hasPlace   = entry.place_name && Array.isArray(entry.place_name) && entry.place_name.length > 0;
+
+  if (hasRoles || hasAddName || hasSeg || hasPlace) {
     html += `<div class="detail-section"><div>`;
-    entry.roles.forEach(r => {
-      const roleText = typeof r === 'string' ? r : (r.role || r.name || r.title || JSON.stringify(r));
-      html += `<span class="role-tag">${highlightText(escapeHtml(String(roleText)), keywords)}</span>`;
-    });
+    if (hasRoles) {
+      entry.roles.forEach(r => {
+        const roleText = typeof r === 'string' ? r : (r.role || r.name || r.title || JSON.stringify(r));
+        html += `<span class="role-tag">${highlightText(escapeHtml(String(roleText)), keywords)}</span>`;
+      });
+    }
+    if (hasAddName) {
+      entry.add_name.forEach(v => {
+        html += `<span class="add-name-tag">${highlightText(escapeHtml(String(v)), keywords)}</span>`;
+      });
+    }
+    if (hasSeg) {
+      entry.seg.forEach(v => {
+        html += `<span class="seg-tag">${highlightText(escapeHtml(String(v)), keywords)}</span>`;
+      });
+    }
+    if (hasPlace) {
+      entry.place_name.forEach(v => {
+        html += `<span class="place-tag">${highlightText(escapeHtml(String(v)), keywords)}</span>`;
+      });
+    }
     html += `</div></div>`;
   }
 
@@ -182,13 +237,13 @@ function renderEntry(entry, keywords) {
     html += `</ul></div>`;
   }
 
-  const skipKeys = new Set(['name','名前','氏名','id','ID','roles','events','source']);
+  const skipKeys = new Set(['name','名前','氏名','id','ID','roles','events','source','add_name','seg','place_name']);
   const otherEntries = Object.entries(entry).filter(([k]) => !skipKeys.has(k));
   if (otherEntries.length > 0) {
     html += `<div class="detail-section">`;
     otherEntries.forEach(([k, v]) => {
       const val = typeof v === 'object' ? JSON.stringify(v, null, 1) : String(v ?? '');
-      if (!val) return;
+      if (!val || val === '[]' || val === '{}') return;
       html += `<div class="field">
         <span class="field-key">${escapeHtml(k)}</span>
         <span class="field-value">${highlightText(escapeHtml(val), keywords)}</span>
@@ -313,6 +368,15 @@ function formatEntryText(entry) {
       typeof r === 'string' ? r : (r.role || r.name || r.title || JSON.stringify(r))
     );
     lines.push(`役職: ${roleTexts.join(', ')}`);
+  }
+  if (entry.add_name && Array.isArray(entry.add_name) && entry.add_name.length > 0) {
+    lines.push(`別名: ${entry.add_name.join(', ')}`);
+  }
+  if (entry.seg && Array.isArray(entry.seg) && entry.seg.length > 0) {
+    lines.push(`年齢等: ${entry.seg.join(', ')}`);
+  }
+  if (entry.place_name && Array.isArray(entry.place_name) && entry.place_name.length > 0) {
+    lines.push(`出身地: ${entry.place_name.join(', ')}`);
   }
   if (entry.events && Array.isArray(entry.events) && entry.events.length > 0) {
     lines.push('経歴:');
