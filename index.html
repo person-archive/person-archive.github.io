@@ -170,16 +170,6 @@ function goToPage(page) {
 function renderEntry(entry, keywords) {
   let html = '';
 
-  if (entry.source) {
-    html += `<div class="detail-section">`;
-    if (Array.isArray(entry.source)) {
-      entry.source.forEach(src => { html += renderSourceLink(src, keywords); });
-    } else {
-      html += renderSourceLink(entry.source, keywords);
-    }
-    html += `</div>`;
-  }
-
   const hasRoles   = entry.roles     && Array.isArray(entry.roles)     && entry.roles.length > 0;
   const hasAddName = entry.add_name  && Array.isArray(entry.add_name)  && entry.add_name.length > 0;
   const hasSeg     = entry.seg       && Array.isArray(entry.seg)       && entry.seg.length > 0;
@@ -252,6 +242,16 @@ function renderEntry(entry, keywords) {
     html += `</div>`;
   }
 
+  if (entry.source) {
+    html += `<div class="detail-section">`;
+    if (Array.isArray(entry.source)) {
+      entry.source.forEach(src => { html += renderSourceLink(src, keywords); });
+    } else {
+      html += renderSourceLink(entry.source, keywords);
+    }
+    html += `</div>`;
+  }
+
   return html;
 }
 
@@ -294,14 +294,10 @@ function renderResults(results, total, totalPages, query) {
         </div>
         <div class="card-detail" onclick="event.stopPropagation()">`;
 
-    if (entries.length > 1) {
-      entries.forEach((entry, ei) => {
-        html += `<div class="entry-divider">史料 ${ei + 1}（${escapeHtml(entry.id || '')}）</div>`;
-        html += renderEntry(entry, keywords);
-      });
-    } else if (entries.length === 1) {
-      html += renderEntry(entries[0], keywords);
-    }
+    entries.forEach((entry, ei) => {
+      html += `<div class="entry-divider">史料 ${ei + 1}（${escapeHtml(entry.id || '')}）</div>`;
+      html += renderEntry(entry, keywords);
+    });
 
     html += `
           <button class="person-copy-btn" onclick="copyPerson(this, ${globalIndex})" title="この人物の情報をコピー">📋 コピー</button>

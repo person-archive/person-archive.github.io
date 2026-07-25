@@ -224,16 +224,18 @@
 }
 
 .entry-divider {
-  margin: 14px 0 6px;
-  padding: 4px 10px;
-  background: var(--accent-soft);
-  border-left: 2px solid var(--accent);
-  font-size: 0.875rem;
-  color: var(--accent);
-  border-radius: 0 4px 4px 0;
+  margin: 22px 0 12px;
+  padding: 7px 12px;
+  background: var(--ink);
+  border-left: none;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #ffffff;
+  border-radius: 4px;
 }
 
-.entry-divider:first-child { margin-top: 6px; }
+.entry-divider:first-child { margin-top: 8px; }
 
 /* ── Pagination ── */
 .pagination {
