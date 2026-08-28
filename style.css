@@ -137,6 +137,74 @@
 
 .source-link:hover { opacity: 0.75; text-decoration: underline; }
 
+/* ── IIIF原文画像サムネイル（docsページの人物カード） ── */
+.source-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.source-thumb-link {
+  flex-shrink: 0;
+  display: block;
+  line-height: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  padding: 0;
+  background: none;
+  cursor: zoom-in;
+  transition: opacity 0.15s;
+}
+
+.source-thumb-link:hover { opacity: 0.8; }
+
+.source-thumb {
+  display: block;
+  width: 140px;
+  height: auto;
+}
+
+/* ── ライトボックス（サムネイルクリックで原寸画像をその場拡大表示） ── */
+.lightbox-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.9);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  cursor: zoom-out;
+}
+
+.lightbox-overlay.open { display: flex; }
+
+.lightbox-img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 4px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+
+.lightbox-close {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  border: none;
+  background: none;
+  color: #fff;
+  font-size: 2rem;
+  line-height: 1;
+  padding: 4px 12px;
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.lightbox-close:hover { opacity: 1; }
+
 .role-tag,
 .add-name-tag,
 .seg-tag,
@@ -269,4 +337,263 @@
   .card-detail  { padding: 12px 14px 16px 50px; }
   .event-item   { flex-direction: column; gap: 1px; }
   .event-date   { min-width: auto; }
+}
+
+/* ── Nav bar (doc pages) ── */
+.nav-bar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  font-size: 0.875rem;
+}
+
+.nav-bar a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.nav-bar a:hover { text-decoration: underline; }
+
+/* ── Tabs (index.html: 検索 / 資料一覧) ── */
+.tab-nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  padding: 9px 18px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover { color: var(--ink); }
+
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Document header ── */
+.doc-header { margin-bottom: 24px; }
+
+.doc-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.doc-meta {
+  margin-top: 6px;
+  font-size: 0.875rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.archive-link { color: var(--accent); text-decoration: none; }
+.archive-link:hover { text-decoration: underline; }
+
+/* ── Stats ── */
+.stat-grid {
+  display: flex;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.stat-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 14px 22px;
+  text-align: center;
+}
+
+.stat-card .num { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+.stat-card .label { font-size: 0.8125rem; color: var(--muted); margin-top: 2px; }
+
+.stat-tables {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+  align-items: start;
+}
+
+.stat-table-block {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 12px 16px 14px;
+}
+
+.stat-table-block h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.stat-table td { padding: 3px 0; color: var(--ink); }
+.stat-table .num-cell { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+.stat-table .unknown-row td { color: var(--muted); font-style: italic; }
+.stat-table tbody.stat-extra { border-top: none; }
+.stat-empty { font-size: 0.8125rem; color: var(--muted); }
+
+/* 5件を超える分は隠れており、ボタンで開閉する（先頭5件は常に見える） */
+.stat-more-btn {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stat-more-btn:hover { text-decoration: underline; }
+
+/* ── Document body (person groups) ── */
+.person-group { margin-bottom: 32px; }
+
+.group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  padding: 8px 0;
+  margin-bottom: 10px;
+  border-bottom: 2px solid var(--border);
+}
+
+.group-count { font-size: 0.75rem; font-weight: 500; color: var(--muted); }
+.date-when { font-size: 0.75rem; font-weight: 400; color: var(--muted); }
+
+.person-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow);
+}
+
+.index-lines { margin-bottom: 2px; }
+
+.field-line {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+.field-line.role-line { color: var(--muted); }
+
+.field-line.name-line {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.field-line.addname-line,
+.field-line.seg-line,
+.field-line.place-line {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.typeg-event {
+  border-left: 3px solid var(--accent-soft);
+  padding-left: 12px;
+  margin-bottom: 18px;
+}
+
+.typeg-person { box-shadow: none; }
+
+.shared-action-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 6px 0 2px;
+}
+
+/* ── Browse page ── */
+.filter-input {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  background: var(--card-bg);
+  outline: none;
+}
+
+.filter-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+.browse-table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.9375rem; }
+
+.browse-table .col-place { width: 15%; }
+.browse-table .col-title { width: auto; }
+.browse-table .col-id { width: 90px; }
+.browse-table .col-count { width: 64px; }
+
+.browse-table th {
+  text-align: left;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.browse-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* 地名列は資料名が複数の旧藩県にまたがると長くなるため、1行に収めて省略する
+   （全件はセルのtitle属性でホバー時に確認できる） */
+.browse-table td:nth-child(1) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browse-table a { color: var(--accent); text-decoration: none; }
+.browse-table a:hover { text-decoration: underline; }
+.browse-table .num-cell { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.browse-row-unavailable td { color: var(--muted); }
+
+.unavailable-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  background: var(--border);
+  color: var(--muted);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  vertical-align: middle;
 }
