@@ -241,10 +241,10 @@ function renderEntry(entry, keywords) {
         if (date) {
           html += `<li><div class="event-item">
             <span class="event-date">${highlightText(escapeHtml(String(date)), keywords)}</span>
-            <span class="event-desc">${highlightText(escapeHtml(String(fullDesc || '—')), keywords)}</span>
+            <span class="event-desc">${formatDescHtml(highlightText(escapeHtml(String(fullDesc || '—')), keywords))}</span>
           </div></li>`;
         } else {
-          html += `<li>${highlightText(escapeHtml(fullDesc || JSON.stringify(ev)), keywords)}</li>`;
+          html += `<li>${formatDescHtml(highlightText(escapeHtml(fullDesc || JSON.stringify(ev)), keywords))}</li>`;
         }
       }
     });
@@ -499,6 +499,11 @@ function escapeHtml(str) {
   const d = document.createElement('div');
   d.textContent = str;
   return d.innerHTML;
+}
+
+function formatDescHtml(html) {
+  const lines = html.split('\n');
+  return lines[0] + lines.slice(1).map(l => `<br><span class="event-desc-cont">${l}</span>`).join('');
 }
 
 function toggleCard(event, card) {
