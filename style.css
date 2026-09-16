@@ -551,18 +551,10 @@
   font-size: 0.875rem;
 }
 
-.typeg-event {
-  border-left: 3px solid var(--accent-soft);
-  padding-left: 12px;
-  margin-bottom: 18px;
-}
-
-.typeg-person { box-shadow: none; }
-
-.shared-action-label {
-  font-size: 0.75rem;
-  color: var(--muted);
-  margin: 6px 0 2px;
+.event-person + .event-person {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
 }
 
 /* ── Browse page ── */
