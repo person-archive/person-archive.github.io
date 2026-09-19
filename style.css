@@ -500,7 +500,9 @@
   font-size: 0.75rem;
   color: var(--muted);
   font-family: monospace;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
 }
 
 .index-lines { margin-bottom: 2px; }
