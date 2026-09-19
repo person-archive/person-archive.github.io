@@ -496,6 +496,13 @@
 
 .card-main { flex: 1; min-width: 0; }
 
+.record-id {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-family: monospace;
+  margin-bottom: 4px;
+}
+
 .index-lines { margin-bottom: 2px; }
 
 .field-line {
