@@ -160,10 +160,10 @@ function toggleStatMore(btn) {
 </script>
 <script>window.SOURCE_VIEWER = {"images": ["https://www.digital.archives.go.jp/api/content/item/da12/C101632631800/iiif/M2007041211401051116_0024.jp2", "https://www.digital.archives.go.jp/api/content/item/da12/C101632631900/iiif/M2007041211401051116_0025.jp2", "https://www.digital.archives.go.jp/api/content/item/da12/C101632632000/iiif/M2007041211401051116_0026.jp2", "https://www.digital.archives.go.jp/api/content/item/da12/C101632632100/iiif/M2007041211401051116_0027.jp2", "https://www.digital.archives.go.jp/api/content/item/da12/C101632632200/iiif/M2007041211401051116_0028.jp2", "https://www.digital.archives.go.jp/api/content/item/da12/C101632632300/iiif/M2007041211401051116_0029.jp2", "https://www.digital.archives.go.jp/api/content/item/da12/C101632632400/iiif/M2007041211401051116_0030.jp2"], "page": "https://www.digital.archives.go.jp/img/3692388#{frame}", "site": "公文書館"};</script>
 <script src="../source_viewer.js?v=5a9dcb52" defer></script>
-<script src="../fulltext/fulltext.js?v=d392e6ec" defer></script>
+<script src="../fulltext.js?v=ad2b121d" defer></script>
 <script>
 // 全文検索の結果から開かれたとき（?q=…）は、本文中の検索語を強調して該当箇所へ移る
-addEventListener('DOMContentLoaded', () => FullTextSearch.highlightFromQuery({ base: '../fulltext/', root: '.doc-body' }));
+addEventListener('DOMContentLoaded', () => FullTextSearch.highlightFromQuery({ base: '../persons/', root: '.doc-body' }));
 </script>
 
 </body>

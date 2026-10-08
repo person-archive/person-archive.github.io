@@ -18,7 +18,7 @@
   }
 </script>
 <link rel="stylesheet" href="style.css">
-<script src="fulltext/fulltext.js?v=d392e6ec"></script>
+<script src="fulltext.js?v=ad2b121d"></script>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen font-sans">
 
@@ -28,16 +28,10 @@
     <h1 class="text-2xl font-bold text-gray-900 tracking-wide">近世近代人名アーカイブス</h1>
   </header>
 
-  <div class="tab-nav">
-    <button class="tab-btn active" id="tabBtnSearch" onclick="showTab('search')" type="button">検索</button>
-    <button class="tab-btn" id="tabBtnFulltext" onclick="showTab('fulltext')" type="button">全文検索</button>
-    <button class="tab-btn" id="tabBtnBrowse" onclick="showTab('browse')" type="button">資料一覧</button>
-  </div>
-
-  <div id="tab-search">
+  <div id="search">
     <div class="mb-8 fade-down-delay">
       <div class="flex rounded-lg border border-gray-300 bg-white overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
-        <input type="text" id="queryInput" placeholder="フリーワード検索" autofocus
+        <input type="search" id="queryInput" placeholder="フリーワード検索" autofocus
           class="flex-1 px-4 py-3 outline-none text-base bg-transparent text-gray-900 placeholder-gray-400 font-sans">
         <button id="searchBtn" onclick="doSearch()"
           class="px-6 py-3 bg-blue-600 text-white text-base font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 border-0 cursor-pointer font-sans">
@@ -69,11 +63,9 @@
     <div id="resultsArea"></div>
   </div>
 
-  <div id="tab-fulltext" style="display:none">
-    <div id="fulltextRoot"></div>
-  </div>
-
-  <div id="tab-browse" style="display:none">
+  <!-- 資料一覧（検索結果を出している間は隠す。law-platform 議事録の一覧・司法省日誌と同じ） -->
+  <div id="browse">
+    <h2 class="browse-heading">資料一覧</h2>
     <p class="text-sm text-gray-500 mb-4"><!-- BROWSE_SUMMARY_START -->全302資料（うち262資料・33030人分を収録・閲覧可能）<!-- BROWSE_SUMMARY_END -->。資料を選んで全体を閲覧できます。</p>
     <input type="text" id="filterInput" class="filter-input" placeholder="資料番号・タイトルで絞り込み" oninput="filterRows()">
     <table class="browse-table">
@@ -114,6 +106,7 @@ const personIndex = FullTextSearch.openIndex('persons/');
 const queryInput = document.getElementById('queryInput');
 const searchBtn = document.getElementById('searchBtn');
 const resultsArea = document.getElementById('resultsArea');
+const browse = document.getElementById('browse');
 
 // 検索欄 → 索引の欄の種類（person_index.py の FIELD_TYPES。null はフリーワード＝全欄）
 const SEARCH_FIELDS = [
@@ -169,7 +162,7 @@ async function findPersons(criteria) {
 async function doSearch() {
   const inputs = {};
   for (const [id, key] of SEARCH_FIELDS) inputs[key] = document.getElementById(id).value.trim();
-  if (!Object.values(inputs).some(Boolean)) { queryInput.focus(); return; }
+  if (!Object.values(inputs).some(Boolean)) { clearSearch(); queryInput.focus(); return; }
 
   const my = ++searchToken;
   searchBtn.disabled = true;
@@ -187,6 +180,7 @@ async function doSearch() {
     currentInputs = inputs;
     currentPage = 1;
     currentDisplayQuery = Object.values(inputs).filter(Boolean).join(' ');
+    browse.hidden = true;
     await renderPage();
   } catch (err) {
     if (my === searchToken) resultsArea.innerHTML = `<div class="status error">エラーが発生しました: ${escapeHtml(err.message)}</div>`;
@@ -208,7 +202,27 @@ async function loadResults(start, end) {
   return out;
 }
 
+// 検索をやめて資料一覧に戻る
+function clearSearch() {
+  searchToken++;
+  allResults = [];
+  loadedResults = new Map();
+  resultsArea.innerHTML = '';
+  searchBtn.disabled = false;
+  browse.hidden = false;
+  history.replaceState(null, '', location.pathname + location.search);
+}
+
+// 検索状態を URL（#search?q=…&name=…&p=2）に残す。資料ページから戻ったときに結果を出し直せるように
+function saveSearchState() {
+  const p = new URLSearchParams();
+  for (const [key, v] of Object.entries(currentInputs)) if (v) p.set(key, v);
+  if (currentPage > 1) p.set('p', currentPage);
+  history.replaceState(null, '', `${location.pathname}${location.search}#search?${p}`);
+}
+
 async function renderPage() {
+  saveSearchState();
   const total = allResults.length;
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const start = (currentPage - 1) * PAGE_SIZE;
@@ -311,10 +325,23 @@ function renderEntry(entry, keywords) {
     } else {
       html += renderSourceLink(entry.source, keywords);
     }
+    html += renderDocLink(entry);
     html += `</div>`;
   }
 
   return html;
+}
+
+// 資料ページ（docs/{資料番号}.html）がある史料なら、その人物の位置へのリンク。
+// ?q= を付けるので、資料ページ側で検索語が強調される（fulltext.js の highlightFromQuery）
+const DOC_STEMS = new Set([...document.querySelectorAll('#browseBody a[href^="docs/"]')]
+  .map(a => a.getAttribute('href').replace(/^docs\/|\.html$/g, '')));
+function renderDocLink(entry) {
+  const url = typeof entry.source === 'object' && entry.source ? entry.source.url || '' : String(entry.source || '');
+  const m = url.match(/digital\.archives\.go\.jp\/img\/(\d+)/);
+  if (!m || !DOC_STEMS.has(m[1]) || !entry.id) return '';
+  const href = `docs/${m[1]}.html?q=${encodeURIComponent(currentDisplayQuery)}#${encodeURIComponent(entry.id)}`;
+  return `<a class="doc-link" href="${escapeHtml(href)}">資料ページで見る →</a><br>`;
 }
 
 function renderResults(results, total, totalPages, query) {
@@ -514,24 +541,6 @@ async function copyJson(btn) {
   }, 2000);
 }
 
-// 全文検索タブ（fulltext/ の静的索引をブラウザ側で検索する。generate_docs.py が生成）
-const fulltext = FullTextSearch.mount(document.getElementById('fulltextRoot'), {
-  base: 'fulltext/', hashKey: 'fulltext', groupLabel: '資料',
-});
-
-function showTab(name) {
-  document.getElementById('tab-search').style.display = name === 'search' ? '' : 'none';
-  document.getElementById('tab-fulltext').style.display = name === 'fulltext' ? '' : 'none';
-  document.getElementById('tab-browse').style.display = name === 'browse' ? '' : 'none';
-  document.getElementById('tabBtnSearch').classList.toggle('active', name === 'search');
-  document.getElementById('tabBtnFulltext').classList.toggle('active', name === 'fulltext');
-  document.getElementById('tabBtnBrowse').classList.toggle('active', name === 'browse');
-  const hash = { search: '', fulltext: fulltext.hash(), browse: '#browse' }[name];
-  history.replaceState(null, '', location.pathname + location.search + hash);
-  if (name === 'browse') document.getElementById('filterInput').focus();
-  if (name === 'fulltext') fulltext.focus();
-}
-
 function filterRows() {
   const q = document.getElementById('filterInput').value.trim().toLowerCase();
   document.querySelectorAll('#browseBody tr').forEach(tr => {
@@ -540,8 +549,25 @@ function filterRows() {
   });
 }
 
-if (location.hash === '#browse') showTab('browse');
-else if (fulltext.restoreFromHash()) showTab('fulltext');
+// 「×」で検索欄を空にしたら（他の欄も空なら）資料一覧に戻る
+queryInput.addEventListener('search', () => {
+  if (SEARCH_FIELDS.every(([id]) => !document.getElementById(id).value.trim())) clearSearch();
+});
+
+// URL の検索状態を復元する（#search?…。以前の全文検索タブの #fulltext?q=… はフリーワードとして扱う）。
+// #browse（資料ページの「資料一覧」リンク）は資料一覧の位置へ
+(() => {
+  const h = location.hash;
+  const m = h.match(/^#(search|fulltext)\?(.*)$/);
+  if (m) {
+    const p = new URLSearchParams(m[2]);
+    for (const [id, key] of SEARCH_FIELDS) document.getElementById(id).value = p.get(key) || '';
+    const page = Number(p.get('p')) || 1;
+    doSearch().then(() => { if (page > 1) goToPage(page); });
+  } else if (h === '#browse') {
+    browse.scrollIntoView();
+  }
+})();
 </script>
 
 </body>

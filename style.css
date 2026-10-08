@@ -316,34 +316,13 @@
 
 .nav-bar a:hover { text-decoration: underline; }
 
-/* ── Tabs (index.html: 検索 / 資料一覧) ── */
-.tab-nav {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 24px;
-  border-bottom: 1px solid var(--border);
-}
+/* ── 資料一覧（index.html の検索欄の下。検索結果を出している間は隠す） ── */
+#browse { margin-top: 40px; }
+.browse-heading { font-size: 1rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
 
-.tab-btn {
-  padding: 9px 18px;
-  border: none;
-  background: none;
-  color: var(--muted);
-  font-size: 0.9375rem;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: color 0.15s, border-color 0.15s;
-}
-
-.tab-btn:hover { color: var(--ink); }
-
-.tab-btn.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-}
+/* 検索結果の各史料から資料ページ（検索語を強調して該当人物へ）へのリンク */
+.doc-link { color: var(--accent); text-decoration: none; font-size: 0.875rem; }
+.doc-link:hover { text-decoration: underline; }
 
 /* ── Document header ── */
 .doc-header { margin-bottom: 24px; }
