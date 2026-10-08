@@ -18,6 +18,7 @@
   }
 </script>
 <link rel="stylesheet" href="style.css">
+<script src="fulltext/fulltext.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen font-sans">
 
@@ -29,6 +30,7 @@
 
   <div class="tab-nav">
     <button class="tab-btn active" id="tabBtnSearch" onclick="showTab('search')" type="button">検索</button>
+    <button class="tab-btn" id="tabBtnFulltext" onclick="showTab('fulltext')" type="button">全文検索</button>
     <button class="tab-btn" id="tabBtnBrowse" onclick="showTab('browse')" type="button">資料一覧</button>
   </div>
 
@@ -44,27 +46,31 @@
       </div>
       <div class="flex items-center gap-2 mt-2">
         <label class="text-sm text-gray-600 flex-shrink-0">氏名</label>
-        <input type="text" id="nameInput" placeholder="例：菱田重禧"
+        <input type="text" id="nameInput"
           class="flex-1 px-3 py-2.5 border border-gray-300 rounded-md outline-none text-base bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-sans">
       </div>
       <div class="flex items-center gap-2 mt-2">
         <label class="text-sm text-gray-600 flex-shrink-0">役職・肩書</label>
-        <input type="text" id="roleInput" placeholder="例：大阪府　士族"
+        <input type="text" id="roleInput"
           class="flex-1 px-3 py-2.5 border border-gray-300 rounded-md outline-none text-base bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-sans">
       </div>
       <div class="flex items-center gap-2 mt-2">
         <label class="text-sm text-gray-600 flex-shrink-0">別名</label>
-        <input type="text" id="addNameInput" placeholder="例：通称・旧名"
+        <input type="text" id="addNameInput"
           class="flex-1 px-3 py-2.5 border border-gray-300 rounded-md outline-none text-base bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-sans">
       </div>
       <div class="flex items-center gap-2 mt-2">
         <label class="text-sm text-gray-600 flex-shrink-0">略歴</label>
-        <input type="text" id="eventsInput" placeholder="例：任青森縣権令"
+        <input type="text" id="eventsInput"
           class="flex-1 px-3 py-2.5 border border-gray-300 rounded-md outline-none text-base bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-sans">
       </div>
     </div>
 
     <div id="resultsArea"></div>
+  </div>
+
+  <div id="tab-fulltext" style="display:none">
+    <div id="fulltextRoot"></div>
   </div>
 
   <div id="tab-browse" style="display:none">
@@ -451,6 +457,26 @@ const KANJI_VARIANT_MAP = {
     "鷗": "鴎", "麴": "麹", "麵": "麺", "黃": "黄", "㪚": "散", "㸃": "点",
     "𢌞": "廻", "𢮦": "検", "〻": "々", "ヿ": "コト", "廿": "二十", "卅": "三十",
     "辦": "弁", "觧": "解",
+    // CJK互換漢字（U+F900〜FAFF・U+2F800〜。見た目は統合漢字と同じだが別コードポイント）→ 統合漢字。
+    // ユーザー提供の統合表（2026-10-08、プロジェクト共通）より。エディタ等でNFC正規化されると
+    // 互換漢字が黙って統合漢字に置き換わり「X→X」の無意味な行になる（上の渡・彦・繁・謙がその例と
+    // 見られる）ため、キーは必ずエスケープ表記で書くこと。
+    "\uF909": "契", "\uF970": "殺", "\uFA03": "糖", "\uF9AA": "寧", "\uF91D": "欄", "\uF91F": "蘭",
+    "\uF983": "旅", "\uF936": "虜", "\uF9D0": "類", "\uF9A2": "廉", "\uF999": "蓮", "\uF99A": "連",
+    "\uF928": "廊", "\uFA10": "塚", "\uFA12": "晴", "\uF929": "朗", "\uFA15": "煕", "\uFA16": "猪",
+    "\uFA17": "益", "\uFA19": "神", "\uFA1A": "祥", "\uFA1B": "福", "\uFA1C": "靖", "\uFA1D": "精",
+    "\uFA1E": "羽", "\uFA22": "諸", "\uFA26": "都", "\uF9DC": "隆", "\uFA2A": "飯", "\uFA2B": "飼",
+    "\uFA2C": "館", "\uFA30": "侮", "\uFA31": "僧", "\uFA32": "免", "\uFA33": "勉", "\uFA34": "勤",
+    "\uFA35": "卑", "\uFA36": "喝", "\uFA37": "嘆", "\uFA38": "器", "\uFA39": "塀", "\uFA3A": "墨",
+    "\uFA3B": "層", "\uFA3D": "悔", "\uFA3E": "慨", "\uFA3F": "憎", "\uFA40": "懲", "\uFA41": "敏",
+    "\uFA42": "既", "\uFA43": "暑", "\uFA44": "梅", "\uFA45": "海", "\uFA46": "渚", "\uFA47": "漢",
+    "\uFA48": "煮", "\uFA4A": "琢", "\uFA4B": "碑", "\uFA4C": "社", "\uFA4E": "祈", "\uFA4D": "祉",
+    "\uFA4F": "祐", "\uFA50": "祖", "\uFA51": "祝", "\uFA52": "禍", "\uFA53": "禎", "\uFA54": "穀",
+    "\uFA55": "突", "\uFA56": "節", "\uFA57": "練", "\uFA59": "繁", "\uFA5A": "署", "\uFA5B": "者",
+    "\uFA5C": "臭", "\uFA5F": "著", "\uFA60": "褐", "\uFA61": "視", "\uFA62": "謁", "\uFA63": "謹",
+    "\uFA64": "賓", "\uFA65": "贈", "\uFA67": "逸", "\uFA68": "難", "\uFA69": "響", "\uFA6A": "頻",
+    // 上記の表には無いが府県史料コーパスに実在する互換漢字（同じ扱いで追加）
+    "\u{2F947}": "真", "\u{2F884}": "巽", "\uFA6D": "館", "\uF996": "練",
 };
 
 // canonical文字 → その文字自身を含む「同一視する」異体字グループ
@@ -605,14 +631,22 @@ async function copyJson(btn) {
   }, 2000);
 }
 
+// 全文検索タブ（fulltext/ の静的索引をブラウザ側で検索する。generate_docs.py が生成）
+const fulltext = FullTextSearch.mount(document.getElementById('fulltextRoot'), {
+  base: 'fulltext/', hashKey: 'fulltext', groupLabel: '資料',
+});
+
 function showTab(name) {
-  const isSearch = name === 'search';
-  document.getElementById('tab-search').style.display = isSearch ? '' : 'none';
-  document.getElementById('tab-browse').style.display = isSearch ? 'none' : '';
-  document.getElementById('tabBtnSearch').classList.toggle('active', isSearch);
-  document.getElementById('tabBtnBrowse').classList.toggle('active', !isSearch);
-  history.replaceState(null, '', isSearch ? location.pathname + location.search : '#browse');
-  if (!isSearch) document.getElementById('filterInput').focus();
+  document.getElementById('tab-search').style.display = name === 'search' ? '' : 'none';
+  document.getElementById('tab-fulltext').style.display = name === 'fulltext' ? '' : 'none';
+  document.getElementById('tab-browse').style.display = name === 'browse' ? '' : 'none';
+  document.getElementById('tabBtnSearch').classList.toggle('active', name === 'search');
+  document.getElementById('tabBtnFulltext').classList.toggle('active', name === 'fulltext');
+  document.getElementById('tabBtnBrowse').classList.toggle('active', name === 'browse');
+  const hash = { search: '', fulltext: fulltext.hash(), browse: '#browse' }[name];
+  history.replaceState(null, '', location.pathname + location.search + hash);
+  if (name === 'browse') document.getElementById('filterInput').focus();
+  if (name === 'fulltext') fulltext.focus();
 }
 
 function filterRows() {
@@ -624,6 +658,7 @@ function filterRows() {
 }
 
 if (location.hash === '#browse') showTab('browse');
+else if (fulltext.restoreFromHash()) showTab('fulltext');
 </script>
 
 </body>

@@ -163,32 +163,6 @@
 
 .source-link:hover { opacity: 0.75; text-decoration: underline; }
 
-/* ── IIIF原文画像サムネイル（docsページの人物カード） ── */
-.source-block {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.source-thumb-link {
-  flex-shrink: 0;
-  display: block;
-  line-height: 0;
-  border-radius: 4px;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  transition: opacity 0.15s;
-}
-
-.source-thumb-link:hover { opacity: 0.8; }
-
-.source-thumb {
-  display: block;
-  width: 140px;
-  height: auto;
-}
-
 .role-tag,
 .add-name-tag,
 .seg-tag,
@@ -322,7 +296,6 @@
   .detail-section ul { grid-template-columns: 1fr; }
   .event-date   { white-space: normal; border-bottom: none; padding-bottom: 0; }
   .event-desc   { padding-top: 0; }
-  .card-row     { flex-direction: column; }
 }
 
 /* ── Nav bar (doc pages) ── */
@@ -487,16 +460,10 @@
   box-shadow: var(--shadow);
 }
 
-/* テキスト（index-lines・事項）とIIIFサムネイルを横並びにする */
-.card-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-}
-
-.card-main { flex: 1; min-width: 0; }
-
 .record-id {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
   font-size: 0.75rem;
   color: var(--muted);
   font-family: monospace;
@@ -504,6 +471,18 @@
   padding-bottom: 4px;
   border-bottom: 1px solid var(--border);
 }
+
+/* ID行の右端の「原本 コマN →」。クリックで原本画像ビューア（source_viewer.js）を開く */
+.record-id .source {
+  margin-left: auto;
+  font-family: "Noto Sans JP", ui-sans-serif, system-ui, sans-serif;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.record-id .source:hover { text-decoration: underline; }
+/* 原本画像ビューアに表示中の人物（1カードに複数人が並ぶ typeG 形式では、枠を文字から少し離す） */
+.event-person.is-shown { box-shadow: none; outline: 1px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
 
 .index-lines { margin-bottom: 2px; }
 
