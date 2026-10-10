@@ -489,6 +489,19 @@
   font-size: 0.875rem;
 }
 
+/* 県令集覧の詰所など、見出し（h2）の中の小見出し */
+.person-subgroup { margin: 14px 0 0; }
+.subgroup-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.person-subgroup .person-subgroup { margin-left: 16px; }
+
 .event-person + .event-person {
   margin-top: 10px;
   padding-top: 10px;
@@ -540,6 +553,17 @@
 .browse-table a { color: var(--accent); text-decoration: none; }
 .browse-table a:hover { text-decoration: underline; }
 .browse-table .num-cell { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.browse-table td:nth-child(3) { overflow-wrap: anywhere; }
+
+/* 史料ごとの見出し行（府県史料／県令集覧／人物写真帖） */
+.browse-table .browse-group-row th {
+  padding: 18px 10px 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink);
+  border-bottom: 2px solid var(--border);
+}
 
 .browse-row-unavailable td { color: var(--muted); }
 
