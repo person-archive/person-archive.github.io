@@ -489,8 +489,12 @@
   font-size: 0.875rem;
 }
 
-/* 県令集覧の詰所など、見出し（h2）の中の小見出し */
-.person-subgroup { margin: 14px 0 0; }
+/* 県令集覧の詰所など、見出し（h2）の中の小見出し。階層が深くなるごとに字下げし、左の線で範囲を示す */
+.person-subgroup {
+  margin: 14px 0 0 0.75rem;
+  padding-left: 0.875rem;
+  border-left: 2px solid var(--border);
+}
 .subgroup-head {
   display: flex;
   align-items: center;
@@ -500,7 +504,21 @@
   color: var(--ink);
   margin-bottom: 8px;
 }
-.person-subgroup .person-subgroup { margin-left: 16px; }
+
+/* 同一人物（名寄せ map.json）の他の資料・箇所へのリンク（司法省日誌の正誤対応のリンクと同じ体裁） */
+.xref {
+  margin-top: 0.6em;
+  padding-top: 0.4em;
+  border-top: 1px dashed var(--border);
+  font-size: 0.8125rem;
+  line-height: 1.7;
+}
+.xref-caption { color: var(--muted); }
+.xref-link { color: var(--accent); text-decoration: none; }
+.xref-link:hover { text-decoration: underline; }
+/* リンク先の人物 */
+.person-card, .event-person { scroll-margin-top: 1rem; }
+.person-card:target, .event-person:target { outline: 3px solid #eda100; outline-offset: 2px; }
 
 .event-person + .event-person {
   margin-top: 10px;
