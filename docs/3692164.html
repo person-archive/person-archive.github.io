@@ -13,20 +13,19 @@
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen font-sans">
 
-<div class="max-w-3xl mx-auto px-4 py-12">
-
-  <nav class="nav-bar">
-    <a href="../index.html">← 検索</a>
+<!-- 検索（人物検索の結果から開いたときは検索結果）・資料一覧へのリンクはスクロールしても画面上端に残す -->
+<div class="sticky top-0 z-40 bg-gray-50/95 backdrop-blur border-b border-gray-200">
+  <nav class="nav-bar max-w-3xl mx-auto px-4 py-2" style="margin-bottom: 0">
+    <a id="back-link" href="../index.html">← 検索</a>
     <a href="../index.html#browse">資料一覧</a>
   </nav>
+</div>
+
+<div class="max-w-3xl mx-auto px-4 pt-8 pb-12">
 
   <header class="doc-header fade-down">
     <h1 class="doc-title">滋賀県史（2編）附録部 官員履歴9 (明治8‐10年)</h1>
-    <div class="doc-meta">
-      資料番号: 3692164
-      <a class="archive-link" href="https://www.digital.archives.go.jp/img/3692164" target="_blank" rel="noopener">国立公文書館デジタルアーカイブで見る →</a>
-      <button type="button" class="viewer-toggle" data-viewer-toggle>原本画像を並べて表示 →</button>
-    </div>
+    <div class="doc-meta">資料番号: 3692164</div>
   </header>
 
   
@@ -219,6 +218,39 @@ function toggleStatMore(btn) {
 <script>
 // 全文検索の結果から開かれたとき（?q=…）は、本文中の検索語を強調して該当箇所へ移る
 addEventListener('DOMContentLoaded', () => FullTextSearch.highlightFromQuery({ base: '../persons/', root: '.doc-body' }));
+
+// 人物検索の結果から開かれたとき（?q=…）は、上端のリンクを「← 検索結果に戻る」にする。
+// 検索結果ページから来た場合は、ページ内のリンクで移動して増えた履歴もまとめて遡って戻る
+// （検索条件・結果のページ番号・スクロール位置がそのまま戻る）。別タブで開いた等で戻る先が無いときは
+// 同じ語をフリーワードにして検索し直す（資料ページの ?q= には欄ごとの区別が残っていないため）
+(function () {
+  var q = new URLSearchParams(location.search).get('q');
+  if (!q) return;
+  var link = document.getElementById('back-link');
+  link.textContent = '← 検索結果に戻る';
+  link.href = '../index.html#search?' + new URLSearchParams({ q: q });
+  var indexUrl = new URL('../index.html', location.href);
+  var fromSearch = false;
+  try {
+    var ref = new URL(document.referrer);
+    fromSearch = ref.origin === indexUrl.origin &&
+      (ref.pathname === indexUrl.pathname || ref.pathname === indexUrl.pathname.slice(0, -'index.html'.length));
+  } catch (e) {}
+  if (!fromSearch) return;
+  // このページに来てから増えた履歴の数を、各履歴の state に記録しておく
+  var depth = (history.state && history.state.backDepth) || 0;
+  history.replaceState(Object.assign({}, history.state, { backDepth: depth }), '');
+  window.addEventListener('hashchange', function () {
+    if (history.state && typeof history.state.backDepth === 'number') depth = history.state.backDepth;
+    else history.replaceState({ backDepth: ++depth }, '');
+  });
+  link.addEventListener('click', function (e) {
+    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    if (history.length <= depth + 1) return;
+    e.preventDefault();
+    history.go(-(depth + 1));
+  });
+})();
 </script>
 
 </body>

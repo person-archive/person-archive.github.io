@@ -518,7 +518,7 @@
 .xref-link { color: var(--accent); text-decoration: none; }
 .xref-link:hover { text-decoration: underline; }
 /* リンク先の人物 */
-.person-card, .event-person { scroll-margin-top: 1rem; }
+.person-card, .event-person { scroll-margin-top: 3.5rem; }  /* 上端に固定した帯（← 検索 等）に隠れないように */
 .person-card:target, .event-person:target { outline: 3px solid #eda100; outline-offset: 2px; }
 
 .event-person + .event-person {

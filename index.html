@@ -556,6 +556,12 @@ queryInput.addEventListener('search', () => {
   if (SEARCH_FIELDS.every(([id]) => !document.getElementById(id).value.trim())) clearSearch();
 });
 
+// 資料ページを開いて戻ってきたとき、結果一覧のスクロール位置を戻せるよう、離れるときの位置を残す
+// （結果は戻った後に描き直すので、ブラウザ任せだと先頭に戻ってしまう）
+addEventListener('pagehide', () => {
+  if (location.hash.startsWith('#search?')) history.replaceState(Object.assign({}, history.state, { resultScrollY: scrollY }), '');
+});
+
 // URL の検索状態を復元する（#search?…。以前の全文検索タブの #fulltext?q=… はフリーワードとして扱う）。
 // #browse（資料ページの「資料一覧」リンク）は資料一覧の位置へ
 (() => {
@@ -565,7 +571,13 @@ queryInput.addEventListener('search', () => {
     const p = new URLSearchParams(m[2]);
     for (const [id, key] of SEARCH_FIELDS) document.getElementById(id).value = p.get(key) || '';
     const page = Number(p.get('p')) || 1;
-    doSearch().then(() => { if (page > 1) goToPage(page); });
+    const savedY = history.state && history.state.resultScrollY;
+    if (savedY) history.scrollRestoration = 'manual';
+    doSearch().then(async () => {
+      if (!savedY) { if (page > 1) goToPage(page); return; }
+      if (page > 1 && page <= Math.ceil(allResults.length / PAGE_SIZE)) { currentPage = page; await renderPage(); }
+      scrollTo(0, savedY);
+    });
   } else if (h === '#browse') {
     browse.scrollIntoView();
   }

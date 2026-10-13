@@ -13,20 +13,19 @@
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen font-sans">
 
-<div class="max-w-3xl mx-auto px-4 py-12">
-
-  <nav class="nav-bar">
-    <a href="../index.html">← 検索</a>
+<!-- 検索（人物検索の結果から開いたときは検索結果）・資料一覧へのリンクはスクロールしても画面上端に残す -->
+<div class="sticky top-0 z-40 bg-gray-50/95 backdrop-blur border-b border-gray-200">
+  <nav class="nav-bar max-w-3xl mx-auto px-4 py-2" style="margin-bottom: 0">
+    <a id="back-link" href="../index.html">← 検索</a>
     <a href="../index.html#browse">資料一覧</a>
   </nav>
+</div>
+
+<div class="max-w-3xl mx-auto px-4 pt-8 pb-12">
 
   <header class="doc-header fade-down">
     <h1 class="doc-title">杤木縣史附録 宇都宮県史 官員履歴 (明治4‐6年)</h1>
-    <div class="doc-meta">
-      資料番号: 3691909
-      <a class="archive-link" href="https://www.digital.archives.go.jp/img/3691909" target="_blank" rel="noopener">国立公文書館デジタルアーカイブで見る →</a>
-      <button type="button" class="viewer-toggle" data-viewer-toggle>原本画像を並べて表示 →</button>
-    </div>
+    <div class="doc-meta">資料番号: 3691909</div>
   </header>
 
   
@@ -483,7 +482,7 @@
         <div class="record-id"><span>ID: fuken_3691909-0074</span><a class="source" href="https://www.digital.archives.go.jp/img/3691909#74" target="_blank" rel="noopener">原本 コマ74 →</a></div>
         <div class="index-lines"><div class="field-line role-line">宇都宮縣士族</div><div class="field-line role-line">元卒</div><div class="field-line name-line">正田爲重</div><div class="field-line addname-line">通稱理三郎</div><div class="field-line seg-line">庚午三十一歳</div></div>
         <div class="detail-section"><ul><li><div class="event-item"><span class="event-date">明治三年庚午十月十三日</span><span class="event-desc">一 任宇都宮藩権少屬</span></div></li><li><div class="event-item"><span class="event-date">四年辛未七月十四日</span><span class="event-desc">一 宇都宮藩ヲ廢シ縣ヲ被置</span></div></li><li><div class="event-item"><span class="event-date">同日</span><span class="event-desc">一 追テ御沙汰候迄是迄之通事務取扱可致事</span></div></li><li><div class="event-item"><span class="event-date">同年九月十八日</span><span class="event-desc">一 省員ニ付免本官</span></div></li><li><div class="event-item"><span class="event-date">五年壬申三月二日</span><span class="event-desc">一 宇都宮縣等外四等出仕申付候事</span></div></li><li><div class="event-item"><span class="event-date">同月九日</span><span class="event-desc">一 宇都宮縣十五等出仕申付候事</span></div></li><li><div class="event-item"><span class="event-date">同年八月二十三日</span><span class="event-desc">一 轉司法省十五等出仕</span></div></li></ul></div>
-        <div class="xref"><span class="xref-caption">司法省日誌（同名の人物）:</span><ul class="xref-list"><li><a href="https://shiho-nisshi.github.io/docs/05.html#a05-034" class="xref-link">司法省日誌 五　明治7年1月8日</a></li></ul></div>
+        
       </div>
       <div class="person-card" id="fuken_3691909-0075" data-frame="75">
         <div class="record-id"><span>ID: fuken_3691909-0075</span><a class="source" href="https://www.digital.archives.go.jp/img/3691909#75" target="_blank" rel="noopener">原本 コマ75 →</a></div>
@@ -501,7 +500,7 @@
         <div class="record-id"><span>ID: fuken_3691909-0077</span><a class="source" href="https://www.digital.archives.go.jp/img/3691909#75" target="_blank" rel="noopener">原本 コマ75 →</a></div>
         <div class="index-lines"><div class="field-line role-line">宇都宮縣士族</div><div class="field-line name-line">矢島中</div><div class="field-line addname-line">通稱雄吉</div><div class="field-line seg-line">壬申二十二歳</div></div>
         <div class="detail-section"><ul><li><div class="event-item"><span class="event-date">明治五年壬申八月十七日</span><span class="event-desc">一 宇都宮縣等外二等出仕申付候事</span></div></li><li><div class="event-item"><span class="event-date">同年十月八日</span><span class="event-desc">一 宇都宮縣十五等出仕申付候事</span></div></li><li><div class="event-item"><span class="event-date">六年癸酉五月七日</span><span class="event-desc">一 轉司法省十五等出仕</span></div></li></ul></div>
-        <div class="xref"><span class="xref-caption">司法省日誌（同名の人物）:</span><ul class="xref-list"><li><a href="https://shiho-nisshi.github.io/docs/07.html#a07-138" class="xref-link">司法省日誌 七　明治7年3月17日</a></li></ul></div>
+        
       </div>
       <div class="person-card" id="fuken_3691909-0078" data-frame="76">
         <div class="record-id"><span>ID: fuken_3691909-0078</span><a class="source" href="https://www.digital.archives.go.jp/img/3691909#76" target="_blank" rel="noopener">原本 コマ76 →</a></div>
@@ -993,6 +992,39 @@ function toggleStatMore(btn) {
 <script>
 // 全文検索の結果から開かれたとき（?q=…）は、本文中の検索語を強調して該当箇所へ移る
 addEventListener('DOMContentLoaded', () => FullTextSearch.highlightFromQuery({ base: '../persons/', root: '.doc-body' }));
+
+// 人物検索の結果から開かれたとき（?q=…）は、上端のリンクを「← 検索結果に戻る」にする。
+// 検索結果ページから来た場合は、ページ内のリンクで移動して増えた履歴もまとめて遡って戻る
+// （検索条件・結果のページ番号・スクロール位置がそのまま戻る）。別タブで開いた等で戻る先が無いときは
+// 同じ語をフリーワードにして検索し直す（資料ページの ?q= には欄ごとの区別が残っていないため）
+(function () {
+  var q = new URLSearchParams(location.search).get('q');
+  if (!q) return;
+  var link = document.getElementById('back-link');
+  link.textContent = '← 検索結果に戻る';
+  link.href = '../index.html#search?' + new URLSearchParams({ q: q });
+  var indexUrl = new URL('../index.html', location.href);
+  var fromSearch = false;
+  try {
+    var ref = new URL(document.referrer);
+    fromSearch = ref.origin === indexUrl.origin &&
+      (ref.pathname === indexUrl.pathname || ref.pathname === indexUrl.pathname.slice(0, -'index.html'.length));
+  } catch (e) {}
+  if (!fromSearch) return;
+  // このページに来てから増えた履歴の数を、各履歴の state に記録しておく
+  var depth = (history.state && history.state.backDepth) || 0;
+  history.replaceState(Object.assign({}, history.state, { backDepth: depth }), '');
+  window.addEventListener('hashchange', function () {
+    if (history.state && typeof history.state.backDepth === 'number') depth = history.state.backDepth;
+    else history.replaceState({ backDepth: ++depth }, '');
+  });
+  link.addEventListener('click', function (e) {
+    if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    if (history.length <= depth + 1) return;
+    e.preventDefault();
+    history.go(-(depth + 1));
+  });
+})();
 </script>
 
 </body>
