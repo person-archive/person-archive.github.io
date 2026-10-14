@@ -60,7 +60,7 @@
   <!-- 資料一覧（検索結果を出している間は隠す。law-platform 議事録の一覧・司法省日誌と同じ） -->
   <div id="browse">
     <h2 class="browse-heading">資料一覧</h2>
-    <p class="text-sm text-gray-500 mb-4"><!-- BROWSE_SUMMARY_START -->全304資料（うち270資料・39193人分を収録・閲覧可能）<!-- BROWSE_SUMMARY_END -->。資料を選んで全体を閲覧できます。</p>
+    <p class="text-sm text-gray-500 mb-4"><!-- BROWSE_SUMMARY_START -->収録状況：府県史料（全302資料中268資料）、県令集覧（1資料）、その他（1資料）／延べ39193名<!-- BROWSE_SUMMARY_END --></p>
     <input type="text" id="filterInput" class="filter-input" placeholder="資料番号・タイトルで絞り込み" oninput="filterRows()">
     <table class="browse-table">
       <colgroup>
@@ -296,14 +296,12 @@ function renderPerson({ doc, members }) {
     .map(({ entry, hit }) => renderEntryRow(entry, hit, name));
   // 畳むのが1件だけなら全部見せる（「他1件」を開く手間のほうが大きい）
   const shown = rows.length > ENTRIES_SHOWN + 1 ? ENTRIES_SHOWN : rows.length;
-  const kinds = [...new Set(person.entries.map(e => e.kind))].sort().map(k => personIndex.meta.kinds[k]);
   let html = `
     <li class="fts-item person-item">
       <div class="fts-item-head">
         <span class="person-name">${hl(name || '（氏名なし）')}</span>
-        ${kinds.map(k => `<span class="fts-badge">${escapeHtml(k)}</span>`).join('')}
+        ${person.entries.length > 1 ? `<span class="fts-badge">史料${person.entries.length}件</span>` : ''}
         <span class="person-tools">
-          ${person.entries.length > 1 ? `<span class="fts-hits">史料${person.entries.length}件</span>` : ''}
           <button type="button" class="person-copy-btn" data-copy="${doc}" title="この人物の情報をテキストでコピー">コピー</button>
         </span>
       </div>
@@ -318,20 +316,15 @@ function renderPerson({ doc, members }) {
   return html + '</li>';
 }
 
-// 史料1件の行：資料名（資料ページへ）・原本／肩書（役職・別名・年齢等・地名）／略歴の抜粋（当たった箇所。
+// 史料1件の行：資料名（資料ページへ）／肩書（役職・別名・年齢等・地名）／略歴の抜粋（当たった箇所。
 // 当たりが略歴に無ければ最初の1件）／略歴の全件（開閉）
 function renderEntryRow(entry, hit, canonicalName) {
   const src = entry.source;
   const srcName = typeof src === 'object' && src ? src.name || '' : String(src || '');
-  const srcUrl = typeof src === 'object' && src ? src.url || '' : '';
   const docHref = docLink(entry);
   const title = docHref
     ? `<a class="entry-source" href="${escapeHtml(docHref)}">${hl(srcName)}</a>`
     : `<span class="entry-source">${hl(srcName)}</span>`;
-  const koma = srcUrl.match(/digital\.archives\.go\.jp\/img\/\d+#(\d+)$/);
-  const orig = srcUrl
-    ? `<a class="entry-orig" href="${escapeHtml(srcUrl)}" target="_blank" rel="noopener">原本${koma ? ` コマ${koma[1]}` : ''} →</a>`
-    : '';
 
   // 資料に書かれた氏名は、まとめた氏名と違うとき（旧字・別表記など）だけ出す
   const profile = [
@@ -351,7 +344,7 @@ function renderEntryRow(entry, hit, canonicalName) {
 
   return `
     <li class="entry-row${hit ? '' : ' is-other'}">
-      <div class="entry-head">${title}${orig}</div>
+      <div class="entry-head">${title}</div>
       ${profile ? `<div class="entry-profile">${profile}</div>` : ''}
       ${snip}
       ${all}

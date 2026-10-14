@@ -67,8 +67,6 @@
 .entry-source { font-weight: 500; color: var(--ink); }
 a.entry-source { color: var(--accent); text-decoration: none; }
 a.entry-source:hover { text-decoration: underline; }
-.entry-orig { margin-left: auto; font-size: 0.75rem; color: var(--accent); text-decoration: none; white-space: nowrap; }
-.entry-orig:hover { text-decoration: underline; }
 .entry-profile { margin-top: 2px; font-size: 0.875rem; line-height: 1.7; color: var(--muted); }
 .entry-row .fts-snip { margin-top: 2px; font-size: 0.875rem; }
 /* 当たりの無い略歴は、どういう人かの手がかりに最初の1件だけを1行で */
@@ -352,6 +350,8 @@ a.entry-source:hover { text-decoration: underline; }
   line-height: 1.7;
 }
 .xref-caption { color: var(--muted); }
+/* 複数人が事項を共有するカードで、どの人物のリンクかを示す氏名 */
+.xref-name { font-weight: 600; color: var(--ink); }
 .xref-list { margin: 0.2em 0 0; padding-left: 1.5em; }
 .xref-link { color: var(--accent); text-decoration: none; }
 .xref-link:hover { text-decoration: underline; }
