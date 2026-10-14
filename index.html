@@ -18,7 +18,7 @@
   }
 </script>
 <link rel="stylesheet" href="style.css">
-<script src="fulltext.js?v=4efff4a2"></script>
+<script src="fulltext.js?v=26250c86"></script>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen font-sans">
 
@@ -26,42 +26,36 @@
 
   <header class="mb-6 fade-down">
     <h1 class="text-2xl font-bold text-gray-900 tracking-wide">近世近代人名アーカイブス</h1>
+    <p class="mt-2 text-sm text-gray-500">
+      国立公文書館所蔵『府県史料』・県令集覧・明治十二年明治天皇御下命「人物写真帖」に載る人物の検索・閲覧サイト。同一人物（名寄せ）の記載は1件にまとめて表示します。
+    </p>
   </header>
 
-  <div id="search">
-    <div class="mb-8 fade-down-delay">
-      <div class="flex rounded-lg border border-gray-300 bg-white overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
-        <input type="search" id="queryInput" placeholder="フリーワード検索" autofocus
-          class="flex-1 px-4 py-3 outline-none text-base bg-transparent text-gray-900 placeholder-gray-400 font-sans">
-        <button id="searchBtn" onclick="doSearch()"
-          class="px-6 py-3 bg-blue-600 text-white text-base font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 border-0 cursor-pointer font-sans">
-          検索
-        </button>
-      </div>
-      <div class="flex items-center gap-2 mt-2">
-        <label class="text-sm text-gray-600 flex-shrink-0">氏名</label>
-        <input type="text" id="nameInput"
-          class="flex-1 px-3 py-2.5 border border-gray-300 rounded-md outline-none text-base bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-sans">
-      </div>
-      <div class="flex items-center gap-2 mt-2">
-        <label class="text-sm text-gray-600 flex-shrink-0">役職・肩書</label>
-        <input type="text" id="roleInput"
-          class="flex-1 px-3 py-2.5 border border-gray-300 rounded-md outline-none text-base bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-sans">
-      </div>
-      <div class="flex items-center gap-2 mt-2">
-        <label class="text-sm text-gray-600 flex-shrink-0">別名</label>
-        <input type="text" id="addNameInput"
-          class="flex-1 px-3 py-2.5 border border-gray-300 rounded-md outline-none text-base bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-sans">
-      </div>
-      <div class="flex items-center gap-2 mt-2">
-        <label class="text-sm text-gray-600 flex-shrink-0">略歴</label>
-        <input type="text" id="eventsInput"
-          class="flex-1 px-3 py-2.5 border border-gray-300 rounded-md outline-none text-base bg-white text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-sans">
-      </div>
+  <!-- 検索欄（司法省日誌の全文検索と同じ見た目。fts-* のスタイルは fulltext.js が入れる）。
+       欄を指定する検索は「欄を指定して検索」に畳んでおく。どの欄で Enter を押しても検索する -->
+  <form id="searchForm" class="mb-8" role="search">
+    <div class="fts-form">
+      <input type="search" id="queryInput" class="fts-input" aria-label="フリーワード検索" autocomplete="off" autofocus>
+      <button type="submit" id="searchBtn" class="fts-btn">検索</button>
     </div>
+    <p class="fts-help">旧字・新字、ひらがな・カタカナの違いや改行は区別せずに探します。スペースで区切ると、すべての語を含むものを探します。</p>
+    <details id="fieldSearch" class="field-search">
+      <summary>欄を指定して検索</summary>
+      <div class="field-search-grid">
+        <label for="nameInput">氏名</label>
+        <input type="search" id="nameInput" autocomplete="off">
+        <label for="roleInput">役職・肩書</label>
+        <input type="search" id="roleInput" autocomplete="off">
+        <label for="addNameInput">別名</label>
+        <input type="search" id="addNameInput" autocomplete="off">
+        <label for="eventsInput">略歴</label>
+        <input type="search" id="eventsInput" autocomplete="off">
+      </div>
+      <p class="field-search-note">入力した条件（フリーワードを含む）は、すべて同じ1件の資料の中で満たすものを探します。</p>
+    </details>
+  </form>
 
-    <div id="resultsArea"></div>
-  </div>
+  <div id="resultsArea" aria-live="polite"></div>
 
   <!-- 資料一覧（検索結果を出している間は隠す。law-platform 議事録の一覧・司法省日誌と同じ） -->
   <div id="browse">
@@ -94,47 +88,53 @@
 </div>
 
 <script>
-// 人物検索：persons/ の静的索引（generate_docs.py → person_index.py が fuken.json・map.json から生成）を
+// 人物検索：persons/ の静的索引（generate_docs.py → person_index.py が人物レコード・map.json から生成）を
 // ブラウザ側で検索する。以前の Google Apps Script（fuken-search-api）と同じ仕様：
 //   各欄はスペース区切りの AND、欄どうしも AND、条件はすべて1件の資料の中で満たされること、
 //   一致した資料は名寄せ（map.json）でまとめて、その人物の全資料を出す。
 //   照合は全文検索と同じ正規化（旧字・新字、ひらがな・カタカナ、空白・改行の違いを無視）
+// 結果の見た目は司法省日誌の全文検索と同じ（fulltext.js の fts-* のスタイル）。1人物＝1件で、
+// 中に史料ごとの行（資料名・肩書・当たった略歴の抜粋）を並べる。氏名で当たった人物を先に出す
 const personIndex = FullTextSearch.openIndex('persons/');
+FullTextSearch.injectStyle();
 
+const form = document.getElementById('searchForm');
 const queryInput = document.getElementById('queryInput');
 const searchBtn = document.getElementById('searchBtn');
+const fieldSearch = document.getElementById('fieldSearch');
 const resultsArea = document.getElementById('resultsArea');
 const browse = document.getElementById('browse');
 
-// 検索欄 → 索引の欄の種類（person_index.py の FIELD_TYPES。null はフリーワード＝全欄）
+// 検索欄 → URL のキー、索引の欄の種類（person_index.py の FIELD_TYPES。null はフリーワード＝全欄）、表示名
 const SEARCH_FIELDS = [
-  ['queryInput', 'q', null],
-  ['nameInput', 'name', 'name'],
-  ['roleInput', 'role', 'roles'],
-  ['addNameInput', 'add_name', 'add_name'],
-  ['eventsInput', 'events', 'events'],
+  ['queryInput', 'q', null, ''],
+  ['nameInput', 'name', 'name', '氏名'],
+  ['roleInput', 'role', 'roles', '役職・肩書'],
+  ['addNameInput', 'add_name', 'add_name', '別名'],
+  ['eventsInput', 'events', 'events', '略歴'],
 ];
 
 const PAGE_SIZE = 50;
-let allResults = [];          // 一致した人物（索引の文書番号）
-let loadedResults = new Map(); // 結果の通し番号 → 人物（{canonical_id, canonical_name, entries}）
+// 1人物の中で最初から見せる史料の数（それより多い分は「他N件の史料を表示」に畳む）
+const ENTRIES_SHOWN = 3;
+const SEP = '<span class="fts-sep">／</span>';
+
+let allResults = [];          // 一致した人物 [{doc: 索引の文書番号, members: 条件を満たした史料の番号のSet}]
+let shownResults = [];        // そのうち史料の種類の絞り込みに合うもの
+let loadedDocs = new Map();   // 文書番号 → 人物（{canonical_id, canonical_name, entries}）
 let currentTerms = [];        // 強調表示する語（正規化済み）
 let currentInputs = {};
+let currentKind = -1;         // 絞り込む史料の種類（meta.kinds の番号。-1 はすべて）
 let currentPage = 1;
-let currentDisplayQuery = '';
 let searchToken = 0;
 
-for (const [id] of SEARCH_FIELDS) {
-  document.getElementById(id).addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') doSearch();
-  });
-}
-
-// 条件 [[欄の種類 or null, 正規化済みの語], ...] をすべて1件の資料の中で満たす人物の文書番号（昇順）
+// 条件 [[欄の種類 or null, 正規化済みの語], ...] をすべて1件の資料の中で満たす人物。
+// 氏名の欄で当たった人物を先に、それぞれの中は文書番号（資料の出現順）の順
 async function findPersons(criteria) {
   const meta = personIndex.meta;
   const stride = meta.stride;
   const nTypes = meta.types.length;
+  const nameType = meta.types.indexOf('name');
   const maps = await Promise.all(criteria.map(([, term]) => personIndex.matchTerm(Array.from(term))));
   const order = maps.map((m, i) => i).sort((i, j) => maps[i].size - maps[j].size);
   const found = [];
@@ -152,19 +152,30 @@ async function findPersons(criteria) {
       members = ms;
       if (!members.size) break;
     }
-    if (members.size) found.push(d);
+    if (!members.size) continue;
+    const byName = maps.some(m => m.get(d).some(pos => {
+      const slot = Math.floor(pos / stride);
+      return slot % nTypes === nameType && members.has(Math.floor(slot / nTypes));
+    }));
+    found.push({ doc: d, members, byName });
   }
-  return found.sort((x, y) => x - y);
+  return found.sort((x, y) => (y.byName - x.byName) || (x.doc - y.doc));
 }
 
-async function doSearch() {
+function readInputs() {
   const inputs = {};
   for (const [id, key] of SEARCH_FIELDS) inputs[key] = document.getElementById(id).value.trim();
+  return inputs;
+}
+
+async function doSearch(kind = -1, page = 1) {
+  const inputs = readInputs();
   if (!Object.values(inputs).some(Boolean)) { clearSearch(); queryInput.focus(); return; }
 
   const my = ++searchToken;
   searchBtn.disabled = true;
-  resultsArea.innerHTML = '<div class="status"><span class="spinner"></span>検索中…</div>';
+  browse.hidden = true;
+  resultsArea.innerHTML = '<div class="fts-status"><span class="fts-spinner"></span>検索中…</div>';
 
   try {
     await personIndex.load();
@@ -173,161 +184,189 @@ async function doSearch() {
     const found = criteria.length ? await findPersons(criteria) : [];
     if (my !== searchToken) return;
     allResults = found;
-    loadedResults = new Map();
+    loadedDocs = new Map();
     currentTerms = [...new Set(criteria.map(([, term]) => term))];
     currentInputs = inputs;
-    currentPage = 1;
-    currentDisplayQuery = Object.values(inputs).filter(Boolean).join(' ');
-    browse.hidden = true;
+    currentKind = kind;
+    currentPage = page;
     await renderPage();
   } catch (err) {
-    if (my === searchToken) resultsArea.innerHTML = `<div class="status error">エラーが発生しました: ${escapeHtml(err.message)}</div>`;
+    if (my === searchToken) resultsArea.innerHTML = `<div class="fts-status fts-error">エラーが発生しました: ${escapeHtml(err.message)}</div>`;
   } finally {
     if (my === searchToken) searchBtn.disabled = false;
   }
-}
-
-// 結果の通し番号 start〜end-1 の人物を読み込む（表示する分だけ）
-async function loadResults(start, end) {
-  const need = [];
-  for (let i = start; i < end; i++) if (!loadedResults.has(i)) need.push(i);
-  if (need.length) {
-    const data = await personIndex.docs(need.map(i => allResults[i]));
-    for (const i of need) loadedResults.set(i, data.get(allResults[i]));
-  }
-  const out = [];
-  for (let i = start; i < end; i++) out.push(loadedResults.get(i));
-  return out;
 }
 
 // 検索をやめて資料一覧に戻る
 function clearSearch() {
   searchToken++;
   allResults = [];
-  loadedResults = new Map();
+  shownResults = [];
+  loadedDocs = new Map();
   resultsArea.innerHTML = '';
   searchBtn.disabled = false;
   browse.hidden = false;
   history.replaceState(null, '', location.pathname + location.search);
 }
 
-// 検索状態を URL（#search?q=…&name=…&p=2）に残す。資料ページから戻ったときに結果を出し直せるように
+// 検索状態を URL（#search?q=…&name=…&k=1&p=2）に残す。資料ページから戻ったときに結果を出し直せるように
 function saveSearchState() {
   const p = new URLSearchParams();
   for (const [key, v] of Object.entries(currentInputs)) if (v) p.set(key, v);
+  if (currentKind >= 0) p.set('k', currentKind);
   if (currentPage > 1) p.set('p', currentPage);
   history.replaceState(null, '', `${location.pathname}${location.search}#search?${p}`);
 }
 
+// 人物が含む史料の種類（ビットの和。person_index.py の docKinds）
+function kindMask(doc) {
+  return parseInt(personIndex.meta.docKinds[doc], 36);
+}
+
 async function renderPage() {
+  const my = searchToken;
+  const kindCounts = personIndex.meta.kinds.map((_, k) => allResults.filter(r => kindMask(r.doc) & (1 << k)).length);
+  if (currentKind >= 0 && !kindCounts[currentKind]) currentKind = -1;
+  shownResults = currentKind < 0 ? allResults : allResults.filter(r => kindMask(r.doc) & (1 << currentKind));
+  const totalPages = Math.max(1, Math.ceil(shownResults.length / PAGE_SIZE));
+  currentPage = Math.min(Math.max(1, currentPage), totalPages);
   saveSearchState();
-  const total = allResults.length;
-  const totalPages = Math.ceil(total / PAGE_SIZE);
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const pageResults = await loadResults(start, Math.min(start + PAGE_SIZE, total));
-  renderResults(pageResults, total, totalPages, currentDisplayQuery);
+  const pageResults = shownResults.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const need = pageResults.map(r => r.doc).filter(d => !loadedDocs.has(d));
+  if (need.length) {
+    const data = await personIndex.docs(need);
+    for (const d of need) loadedDocs.set(d, data.get(d));
+  }
+  if (my !== searchToken) return;
+  renderResults(pageResults, kindCounts, totalPages);
 }
 
 async function goToPage(page) {
-  const totalPages = Math.ceil(allResults.length / PAGE_SIZE);
-  if (page < 1 || page > totalPages) return;
   currentPage = page;
   await renderPage();
   resultsArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // 原文を HTML にして検索語の箇所を強調する（照合は検索と同じ正規化）
-function hl(text, terms) {
-  return FullTextSearch.markHtml(personIndex, text, terms);
+function hl(text) {
+  return FullTextSearch.markHtml(personIndex, text, currentTerms);
 }
 
-function renderEntry(entry, keywords) {
-  let html = '';
+// 検索条件の表示（「野村」 氏名「…」）
+function queryLabel() {
+  return SEARCH_FIELDS.filter(([, key]) => currentInputs[key])
+    .map(([, key, , label]) => `${escapeHtml(label)}「<strong>${escapeHtml(currentInputs[key])}</strong>」`).join(' ');
+}
 
-  const hasRoles   = entry.roles     && Array.isArray(entry.roles)     && entry.roles.length > 0;
-  const hasAddName = entry.add_name  && Array.isArray(entry.add_name)  && entry.add_name.length > 0;
-  const hasSeg     = entry.seg       && Array.isArray(entry.seg)       && entry.seg.length > 0;
-  const hasPlace   = entry.place_name && Array.isArray(entry.place_name) && entry.place_name.length > 0;
-
-  if (hasRoles || hasAddName || hasSeg || hasPlace) {
-    html += `<div class="detail-section"><div>`;
-    if (hasRoles) {
-      entry.roles.forEach(r => {
-        const roleText = typeof r === 'string' ? r : (r.role || r.name || r.title || JSON.stringify(r));
-        html += `<span class="role-tag">${hl(String(roleText), keywords)}</span>`;
-      });
-    }
-    if (hasAddName) {
-      entry.add_name.forEach(v => {
-        html += `<span class="add-name-tag">${hl(String(v), keywords)}</span>`;
-      });
-    }
-    if (hasSeg) {
-      entry.seg.forEach(v => {
-        html += `<span class="seg-tag">${hl(String(v), keywords)}</span>`;
-      });
-    }
-    if (hasPlace) {
-      entry.place_name.forEach(v => {
-        html += `<span class="place-tag">${hl(String(v), keywords)}</span>`;
-      });
-    }
-    html += `</div></div>`;
+function renderResults(pageResults, kindCounts, totalPages) {
+  if (!allResults.length) {
+    resultsArea.innerHTML = `<div class="fts-empty">${queryLabel()} に一致する人物はありませんでした</div>`;
+    return;
   }
-
-  if (entry.events && Array.isArray(entry.events) && entry.events.length > 0) {
-    html += `<div class="detail-section"><ul>`;
-    entry.events.forEach(ev => {
-      if (typeof ev === 'string') {
-        html += `<li>${hl(ev, keywords)}</li>`;
-      } else if (typeof ev === 'object' && ev !== null) {
-        const date = ev.date || ev['日付'] || ev.year || '';
-        const desc = ev.description || ev.event || ev['内容'] || ev.title || ev.name || '';
-        const rest = Object.entries(ev)
-          .filter(([k]) => !['date','日付','year','description','event','内容','title','name'].includes(k))
-          .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
-          .join('　');
-        const fullDesc = [desc, rest].filter(Boolean).join('　');
-        if (date) {
-          html += `<li><div class="event-item">
-            <span class="event-date">${hl(String(date), keywords)}</span>
-            <span class="event-desc">${formatDescHtml(hl(String(fullDesc || '—'), keywords))}</span>
-          </div></li>`;
-        } else {
-          html += `<li>${formatDescHtml(hl(fullDesc || JSON.stringify(ev), keywords))}</li>`;
-        }
-      }
-    });
-    html += `</ul></div>`;
-  }
-
-  const skipKeys = new Set(['name','名前','氏名','id','ID','roles','events','source','add_name','seg','place_name']);
-  const otherEntries = Object.entries(entry).filter(([k]) => !skipKeys.has(k));
-  if (otherEntries.length > 0) {
-    html += `<div class="detail-section">`;
-    otherEntries.forEach(([k, v]) => {
-      const val = typeof v === 'object' ? JSON.stringify(v, null, 1) : String(v ?? '');
-      if (!val || val === '[]' || val === '{}') return;
-      html += `<div class="field">
-        <span class="field-key">${escapeHtml(k)}</span>
-        <span class="field-value">${hl(val, keywords)}</span>
+  let options = `<option value="-1">すべての資料（${allResults.length}人）</option>`;
+  personIndex.meta.kinds.forEach((label, k) => {
+    if (kindCounts[k]) options += `<option value="${k}"${k === currentKind ? ' selected' : ''}>${escapeHtml(label)}（${kindCounts[k]}人）</option>`;
+  });
+  let html = `
+    <div class="fts-head">
+      <span>${queryLabel()} — 全${allResults.length}人${currentKind >= 0 ? `（うち${shownResults.length}人を表示）` : ''}</span>
+      <select class="fts-group" id="kindSelect" aria-label="資料の種類で絞り込み">${options}</select>
+    </div>
+    <ol class="fts-list">`;
+  for (const r of pageResults) html += renderPerson(r);
+  html += '</ol>';
+  if (totalPages > 1) {
+    html += `
+      <div class="fts-pager">
+        <button type="button" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>← 前へ</button>
+        <span>${currentPage} / ${totalPages} ページ</span>
+        <button type="button" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>次へ →</button>
       </div>`;
-    });
-    html += `</div>`;
   }
+  resultsArea.innerHTML = html;
+}
 
-  if (entry.source) {
-    html += `<div class="detail-section">`;
-    if (Array.isArray(entry.source)) {
-      entry.source.forEach(src => { html += renderSourceLink(src, keywords); });
-    } else {
-      html += renderSourceLink(entry.source, keywords);
-    }
-    html += renderDocLink(entry);
-    html += `</div>`;
+// 1人物＝1件。条件を満たした史料を先に（それぞれの中は元の順）並べ、ENTRIES_SHOWN 件を超える分は畳む
+function renderPerson({ doc, members }) {
+  const person = loadedDocs.get(doc);
+  const name = person.canonical_name || '';
+  const rows = person.entries
+    .map((entry, i) => ({ entry, hit: members.has(i) }))
+    .sort((a, b) => b.hit - a.hit)
+    .map(({ entry, hit }) => renderEntryRow(entry, hit, name));
+  // 畳むのが1件だけなら全部見せる（「他1件」を開く手間のほうが大きい）
+  const shown = rows.length > ENTRIES_SHOWN + 1 ? ENTRIES_SHOWN : rows.length;
+  const kinds = [...new Set(person.entries.map(e => e.kind))].sort().map(k => personIndex.meta.kinds[k]);
+  let html = `
+    <li class="fts-item person-item">
+      <div class="fts-item-head">
+        <span class="person-name">${hl(name || '（氏名なし）')}</span>
+        ${kinds.map(k => `<span class="fts-badge">${escapeHtml(k)}</span>`).join('')}
+        <span class="person-tools">
+          ${person.entries.length > 1 ? `<span class="fts-hits">史料${person.entries.length}件</span>` : ''}
+          <button type="button" class="person-copy-btn" data-copy="${doc}" title="この人物の情報をテキストでコピー">コピー</button>
+        </span>
+      </div>
+      <ul class="entry-list">${rows.slice(0, shown).join('')}</ul>`;
+  if (rows.length > shown) {
+    html += `
+      <details class="entry-more">
+        <summary>他${rows.length - shown}件の史料を表示</summary>
+        <ul class="entry-list">${rows.slice(shown).join('')}</ul>
+      </details>`;
   }
+  return html + '</li>';
+}
 
-  return html;
+// 史料1件の行：資料名（資料ページへ）・原本／肩書（役職・別名・年齢等・地名）／略歴の抜粋（当たった箇所。
+// 当たりが略歴に無ければ最初の1件）／略歴の全件（開閉）
+function renderEntryRow(entry, hit, canonicalName) {
+  const src = entry.source;
+  const srcName = typeof src === 'object' && src ? src.name || '' : String(src || '');
+  const srcUrl = typeof src === 'object' && src ? src.url || '' : '';
+  const docHref = docLink(entry);
+  const title = docHref
+    ? `<a class="entry-source" href="${escapeHtml(docHref)}">${hl(srcName)}</a>`
+    : `<span class="entry-source">${hl(srcName)}</span>`;
+  const koma = srcUrl.match(/digital\.archives\.go\.jp\/img\/\d+#(\d+)$/);
+  const orig = srcUrl
+    ? `<a class="entry-orig" href="${escapeHtml(srcUrl)}" target="_blank" rel="noopener">原本${koma ? ` コマ${koma[1]}` : ''} →</a>`
+    : '';
+
+  // 資料に書かれた氏名は、まとめた氏名と違うとき（旧字・別表記など）だけ出す
+  const profile = [
+    ...(entry.name && entry.name !== canonicalName ? [entry.name] : []),
+    ...entry.roles, ...entry.add_name, ...entry.seg, ...entry.place_name,
+  ].map(hl).join(SEP);
+
+  const events = entry.events || [];
+  const eventText = ev => [ev.date, ev.description].filter(Boolean).join(' ');
+  let snip = hit && currentTerms.length
+    ? FullTextSearch.snippetsHtml(personIndex, events.map(eventText).join('\x1f'), currentTerms).html
+    : '';
+  if (!snip && events.length) snip = `<div class="fts-snip entry-first-event">${hl(eventText(events[0]).replace(/\n/g, ' '))}</div>`;
+  const all = events.length > 1 || (events.length === 1 && (events[0].description || '').includes('\n'))
+    ? `<details class="entry-events"><summary>略歴（${events.length}件）を表示</summary>${renderEvents(events)}</details>`
+    : '';
+
+  return `
+    <li class="entry-row${hit ? '' : ' is-other'}">
+      <div class="entry-head">${title}${orig}</div>
+      ${profile ? `<div class="entry-profile">${profile}</div>` : ''}
+      ${snip}
+      ${all}
+    </li>`;
+}
+
+// 略歴の全件（資料ページの人物カードと同じ表。generate_docs.py の render_events）
+function renderEvents(events) {
+  const items = events.map(ev => {
+    const desc = formatDescHtml(hl(ev.description || ''));
+    return ev.date
+      ? `<li><div class="event-item"><span class="event-date">${hl(ev.date)}</span><span class="event-desc">${desc || '—'}</span></div></li>`
+      : `<li>${desc}</li>`;
+  }).join('');
+  return `<div class="detail-section"><ul>${items}</ul></div>`;
 }
 
 // 資料ページ（docs/{資料番号}.html）がある史料なら、その人物の位置へのリンク。
@@ -335,93 +374,13 @@ function renderEntry(entry, keywords) {
 const DOC_STEMS = new Set([...document.querySelectorAll('#browseBody a[href^="docs/"]')]
   .map(a => a.getAttribute('href').replace(/^docs\/|\.html$/g, '')));
 // 府県史料は原本URLの資料番号、県令集覧・人物写真帖は ID（{資料番号}-0001）の資料番号で探す
-function renderDocLink(entry) {
+function docLink(entry) {
   const url = typeof entry.source === 'object' && entry.source ? entry.source.url || '' : String(entry.source || '');
   const m = url.match(/digital\.archives\.go\.jp\/img\/(\d+)/);
   const stem = m ? m[1] : String(entry.id || '').replace(/-\d+$/, '');
   if (!DOC_STEMS.has(stem) || !entry.id) return '';
-  const href = `docs/${stem}.html?q=${encodeURIComponent(currentDisplayQuery)}#${encodeURIComponent(entry.id)}`;
-  return `<a class="doc-link" href="${escapeHtml(href)}">資料ページで見る →</a><br>`;
-}
-
-function renderResults(results, total, totalPages, query) {
-  if (total === 0) {
-    resultsArea.innerHTML = `
-      <div class="empty-state">
-        <div class="icon">◯</div>
-        <p>「${escapeHtml(query)}」に一致する結果はありませんでした</p>
-      </div>`;
-    return;
-  }
-
-  const keywords = currentTerms;
-  const pageStart = (currentPage - 1) * PAGE_SIZE;
-
-  let html = `
-    <div class="results-header">
-      <h2>検索結果</h2>
-      <div style="display:flex;align-items:center;gap:12px;">
-        <span>「${escapeHtml(query)}」— 全${total}件</span>
-        <button class="copy-btn" onclick="copyJson(this)" title="検索結果全体をJSONでコピー">📋 JSON コピー</button>
-      </div>
-    </div>`;
-
-  results.forEach((group, i) => {
-    const globalIndex = pageStart + i;
-    const name    = group.canonical_name || '不明';
-    const entries = group.entries || [];
-    const badge   = entries.length > 1
-      ? `<span class="entry-badge">史料 ${entries.length}件</span>`
-      : '';
-
-    html += `
-      <div class="result-card" style="animation-delay: ${i * 0.04}s" onclick="toggleCard(event, this)">
-        <div class="card-summary">
-          <div class="card-number">${globalIndex + 1}</div>
-          <div class="card-title">${hl(name, keywords)}${badge}</div>
-          <span class="chevron">▶</span>
-        </div>
-        <div class="card-detail" onclick="event.stopPropagation()">`;
-
-    entries.forEach((entry, ei) => {
-      html += `<div class="entry-divider">史料 ${ei + 1}（${escapeHtml(entry.id || '')}）</div>`;
-      html += renderEntry(entry, keywords);
-    });
-
-    html += `
-          <button class="person-copy-btn" onclick="copyPerson(this, ${globalIndex})" title="この人物の情報をコピー">📋 コピー</button>
-        </div>
-      </div>`;
-  });
-
-  if (totalPages > 1) {
-    html += `
-      <div class="pagination">
-        <button class="pagination-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>← 前へ</button>
-        <span class="pagination-info">${currentPage} / ${totalPages} ページ（全${total}件）</span>
-        <button class="pagination-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>次へ →</button>
-      </div>`;
-  }
-
-  resultsArea.innerHTML = html;
-}
-
-function renderSourceLink(src, keywords) {
-  if (typeof src === 'string') {
-    if (src.startsWith('http')) {
-      return `<a class="source-link" href="${escapeHtml(src)}" target="_blank" rel="noopener">${escapeHtml(src)}</a><br>`;
-    }
-    return `<span style="font-size:0.85rem">${hl(src, keywords)}</span><br>`;
-  }
-  if (typeof src === 'object' && src !== null) {
-    const url = src.url || src.link || src.href || '';
-    const label = src.title || src.name || src.label || url || JSON.stringify(src);
-    if (url) {
-      return `<a class="source-link" href="${escapeHtml(url)}" target="_blank" rel="noopener">${hl(String(label), keywords)}</a><br>`;
-    }
-    return `<span style="font-size:0.85rem">${hl(String(label), keywords)}</span><br>`;
-  }
-  return '';
+  const q = Object.values(currentInputs).filter(Boolean).join(' ');
+  return `docs/${stem}.html?q=${encodeURIComponent(q)}#${encodeURIComponent(entry.id)}`;
 }
 
 function escapeHtml(str) {
@@ -435,65 +394,34 @@ function formatDescHtml(html) {
   return lines[0] + lines.slice(1).map(l => `<br><span class="event-desc-cont">${l}</span>`).join('');
 }
 
-function toggleCard(event, card) {
-  const selection = window.getSelection();
-  if (selection && selection.toString().length > 0) return;
-  card.classList.toggle('open');
-}
-
 function formatEntryText(entry) {
   const lines = [];
-  if (entry.roles && Array.isArray(entry.roles) && entry.roles.length > 0) {
-    const roleTexts = entry.roles.map(r =>
-      typeof r === 'string' ? r : (r.role || r.name || r.title || JSON.stringify(r))
-    );
-    lines.push(`役職: ${roleTexts.join(', ')}`);
-  }
-  if (entry.add_name && Array.isArray(entry.add_name) && entry.add_name.length > 0) {
-    lines.push(`別名: ${entry.add_name.join(', ')}`);
-  }
-  if (entry.seg && Array.isArray(entry.seg) && entry.seg.length > 0) {
-    lines.push(`年齢等: ${entry.seg.join(', ')}`);
-  }
-  if (entry.place_name && Array.isArray(entry.place_name) && entry.place_name.length > 0) {
-    lines.push(`出身地: ${entry.place_name.join(', ')}`);
-  }
-  if (entry.events && Array.isArray(entry.events) && entry.events.length > 0) {
+  if (entry.roles.length) lines.push(`役職: ${entry.roles.join(', ')}`);
+  if (entry.add_name.length) lines.push(`別名: ${entry.add_name.join(', ')}`);
+  if (entry.seg.length) lines.push(`年齢等: ${entry.seg.join(', ')}`);
+  if (entry.place_name.length) lines.push(`出身地: ${entry.place_name.join(', ')}`);
+  if (entry.events.length) {
     lines.push('経歴:');
-    entry.events.forEach(ev => {
-      if (typeof ev === 'string') {
-        lines.push(`  ${ev}`);
-      } else if (typeof ev === 'object' && ev !== null) {
-        const date = ev.date || ev['日付'] || ev.year || '';
-        const desc = ev.description || ev.event || ev['内容'] || ev.title || ev.name || '';
-        lines.push(`  ${date ? date + ' ' : ''}${desc || JSON.stringify(ev)}`);
-      }
-    });
+    entry.events.forEach(ev => lines.push(`  ${ev.date ? ev.date + ' ' : ''}${ev.description}`));
   }
-  if (entry.source) {
-    const sources = Array.isArray(entry.source) ? entry.source : [entry.source];
-    lines.push(`出典: ${sources.map(s => typeof s === 'string' ? s : (s.url || s.title || JSON.stringify(s))).join(', ')}`);
-  }
+  const src = entry.source;
+  if (src) lines.push(`出典: ${typeof src === 'string' ? src : [src.name, src.url].filter(Boolean).join(' ')}`);
   return lines.join('\n');
 }
 
-function formatPersonText(group) {
+function formatPersonText(person) {
   const lines = [];
-  const name = group.canonical_name || '';
-  const id   = group.canonical_id   || '';
-  if (name) lines.push(`名前: ${name}`);
-  if (id)   lines.push(`ID: ${id}`);
-
-  const entries = group.entries || [];
+  if (person.canonical_name) lines.push(`名前: ${person.canonical_name}`);
+  if (person.canonical_id) lines.push(`ID: ${person.canonical_id}`);
+  const entries = person.entries;
   if (entries.length === 1) {
     lines.push(formatEntryText(entries[0]));
   } else {
     entries.forEach((entry, i) => {
-      lines.push(`\n--- 史料 ${i + 1}（${entry.id || ''}）---`);
+      lines.push(`\n--- 史料 ${i + 1}（${entry.id}）---`);
       lines.push(formatEntryText(entry));
     });
   }
-
   return lines.join('\n');
 }
 
@@ -512,34 +440,31 @@ async function copyToClipboard(text) {
   }
 }
 
-async function copyPerson(btn, index) {
-  const person = loadedResults.get(index);
+async function copyPerson(btn) {
+  const person = loadedDocs.get(Number(btn.dataset.copy));
   if (!person) return;
   await copyToClipboard(formatPersonText(person));
   btn.classList.add('copied');
-  btn.textContent = '✓ コピーしました';
+  btn.textContent = 'コピーしました';
   setTimeout(() => {
     btn.classList.remove('copied');
-    btn.textContent = '📋 コピー';
+    btn.textContent = 'コピー';
   }, 2000);
 }
 
-// 検索結果全体を、以前のGAS（fuken-search-api）の応答と同じ形のJSONでコピーする
-async function copyJson(btn) {
-  const results = await loadResults(0, allResults.length);
-  const response = {
-    query: currentInputs.q, role: currentInputs.role, name: currentInputs.name,
-    add_name: currentInputs.add_name, events: currentInputs.events,
-    count: results.length, results,
-  };
-  await copyToClipboard(JSON.stringify(response, null, 2));
-  btn.classList.add('copied');
-  btn.textContent = '✓ コピーしました';
-  setTimeout(() => {
-    btn.classList.remove('copied');
-    btn.innerHTML = '📋 JSON コピー';
-  }, 2000);
-}
+// 結果の中のボタン（ページ送り・コピー）と、史料の種類の絞り込み
+resultsArea.addEventListener('click', e => {
+  const pageBtn = e.target.closest('[data-page]');
+  if (pageBtn && !pageBtn.disabled) goToPage(Number(pageBtn.dataset.page));
+  const copyBtn = e.target.closest('[data-copy]');
+  if (copyBtn) copyPerson(copyBtn);
+});
+resultsArea.addEventListener('change', e => {
+  if (e.target.id !== 'kindSelect') return;
+  currentKind = Number(e.target.value);
+  currentPage = 1;
+  renderPage();
+});
 
 function filterRows() {
   const q = document.getElementById('filterInput').value.trim().toLowerCase();
@@ -549,10 +474,14 @@ function filterRows() {
   });
 }
 
-// 「×」で検索欄を空にしたら（他の欄も空なら）資料一覧に戻る
-queryInput.addEventListener('search', () => {
-  if (SEARCH_FIELDS.every(([id]) => !document.getElementById(id).value.trim())) clearSearch();
-});
+// 検索は Enter・検索ボタンのときだけ（どの欄で Enter を押しても検索する）
+form.addEventListener('submit', e => { e.preventDefault(); doSearch(); });
+// 「×」で欄を空にしたら（他の欄も空なら）資料一覧に戻る
+for (const [id] of SEARCH_FIELDS) {
+  document.getElementById(id).addEventListener('search', () => {
+    if (!Object.values(readInputs()).some(Boolean)) clearSearch();
+  });
+}
 
 // 資料ページを開いて戻ってきたとき、結果一覧のスクロール位置を戻せるよう、離れるときの位置を残す
 // （結果は戻った後に描き直すので、ブラウザ任せだと先頭に戻ってしまう）
@@ -568,13 +497,12 @@ addEventListener('pagehide', () => {
   if (m) {
     const p = new URLSearchParams(m[2]);
     for (const [id, key] of SEARCH_FIELDS) document.getElementById(id).value = p.get(key) || '';
-    const page = Number(p.get('p')) || 1;
+    // 欄を指定した検索なら、その欄が見えるように開いておく
+    if (SEARCH_FIELDS.some(([id, key]) => key !== 'q' && p.get(key))) fieldSearch.open = true;
     const savedY = history.state && history.state.resultScrollY;
     if (savedY) history.scrollRestoration = 'manual';
-    doSearch().then(async () => {
-      if (!savedY) { if (page > 1) goToPage(page); return; }
-      if (page > 1 && page <= Math.ceil(allResults.length / PAGE_SIZE)) { currentPage = page; await renderPage(); }
-      scrollTo(0, savedY);
+    doSearch(p.has('k') ? Number(p.get('k')) : -1, Number(p.get('p')) || 1).then(() => {
+      if (savedY) scrollTo(0, savedY);
     });
   } else if (h === '#browse') {
     browse.scrollIntoView();
