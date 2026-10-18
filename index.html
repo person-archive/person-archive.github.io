@@ -1,9 +1,20 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<!-- Google アナリティクス（GA4 プロパティ「人名アーカイブス」。資料ページは generate_docs.py の GA_TAG で同じものを入れている） -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-P7GVYLH8KW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-P7GVYLH8KW');
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>近世近代人名アーカイブス</title>
+<link rel="icon" href="favicon.ico" sizes="32x32">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -18,7 +29,7 @@
   }
 </script>
 <link rel="stylesheet" href="style.css">
-<script src="fulltext.js?v=26250c86"></script>
+<script src="fulltext.js?v=cbfa04d8"></script>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen font-sans">
 
@@ -467,8 +478,19 @@ function filterRows() {
   });
 }
 
+// 検索語を Google アナリティクスに search イベントとして送る（GA4 の推奨イベント。search_term が検索語）。
+// フリーワードだけならその語、欄を指定した検索は「氏名:…」のように欄名を付けてつなぐ。
+// search_fields には使った欄（q,name,…）を入れる。URL からの復元（戻ったとき）では送らない
+function trackSearch() {
+  const inputs = readInputs();
+  const used = SEARCH_FIELDS.filter(([, key]) => inputs[key]);
+  if (!used.length || typeof gtag !== 'function') return;
+  const term = used.map(([, key, , label]) => label ? `${label}:${inputs[key]}` : inputs[key]).join(' ');
+  gtag('event', 'search', { search_term: term, search_fields: used.map(([, key]) => key).join(',') });
+}
+
 // 検索は Enter・検索ボタンのときだけ（どの欄で Enter を押しても検索する）
-form.addEventListener('submit', e => { e.preventDefault(); doSearch(); });
+form.addEventListener('submit', e => { e.preventDefault(); trackSearch(); doSearch(); });
 // 「×」で欄を空にしたら（他の欄も空なら）資料一覧に戻る
 for (const [id] of SEARCH_FIELDS) {
   document.getElementById(id).addEventListener('search', () => {
