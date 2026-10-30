@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<!-- Google アナリティクス（GA4 プロパティ「人名アーカイブス」。資料ページは generate_docs.py の GA_TAG で同じものを入れている） -->
+<!-- Google アナリティクス（GA4 プロパティ「人名アーカイブス」。資料ページは build.py の GA_TAG で同じものを入れている） -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-P7GVYLH8KW"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -29,7 +29,7 @@
   }
 </script>
 <link rel="stylesheet" href="style.css">
-<script src="fulltext.js?v=cbfa04d8"></script>
+<script src="search.js?v=5186a4c2"></script>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen font-sans">
 
@@ -42,14 +42,14 @@
     </p>
   </header>
 
-  <!-- 検索欄（司法省日誌の全文検索と同じ見た目。fts-* のスタイルは fulltext.js が入れる）。
+  <!-- 検索欄（司法省日誌の全文検索と同じ見た目。search-* のスタイルは search.js が入れる）。
        欄を指定する検索は「欄を指定して検索」に畳んでおく。どの欄で Enter を押しても検索する -->
   <form id="searchForm" class="mb-8" role="search">
-    <div class="fts-form">
-      <input type="search" id="queryInput" class="fts-input" aria-label="フリーワード検索" autocomplete="off" autofocus>
-      <button type="submit" id="searchBtn" class="fts-btn">検索</button>
+    <div class="search-form">
+      <input type="search" id="queryInput" class="search-input" aria-label="フリーワード検索" autocomplete="off" autofocus>
+      <button type="submit" id="searchBtn" class="search-btn">検索</button>
     </div>
-    <p class="fts-help">旧字・新字、ひらがな・カタカナの違いや改行は区別せずに探します。スペースで区切ると、すべての語を含むものを探します。</p>
+    <p class="search-help">旧字・新字、ひらがな・カタカナの違いや改行は区別せずに探します。スペースで区切ると、すべての語を含むものを探します。</p>
     <details id="fieldSearch" class="field-search">
       <summary>欄を指定して検索</summary>
       <div class="field-search-grid">
@@ -99,15 +99,15 @@
 </div>
 
 <script>
-// 人物検索：persons/ の静的索引（generate_docs.py → person_index.py が人物レコード・map.json から生成）を
+// 人物検索：persons/ の静的索引（build.py → person_index.py が人物レコード・map.json から生成）を
 // ブラウザ側で検索する。以前の Google Apps Script（fuken-search-api）と同じ仕様：
 //   各欄はスペース区切りの AND、欄どうしも AND、条件はすべて1件の資料の中で満たされること、
 //   一致した資料は名寄せ（map.json）でまとめて、その人物の全資料を出す。
 //   照合は全文検索と同じ正規化（旧字・新字、ひらがな・カタカナ、空白・改行の違いを無視）
-// 結果の見た目は司法省日誌の全文検索と同じ（fulltext.js の fts-* のスタイル）。1人物＝1件で、
+// 結果の見た目は司法省日誌の全文検索と同じ（search.js の search-* のスタイル）。1人物＝1件で、
 // 中に史料ごとの行（資料名・肩書・当たった略歴の抜粋）を並べる。氏名で当たった人物を先に出す
-const personIndex = FullTextSearch.openIndex('persons/');
-FullTextSearch.injectStyle();
+const personIndex = Search.openIndex('persons/');
+Search.injectStyle();
 
 const form = document.getElementById('searchForm');
 const queryInput = document.getElementById('queryInput');
@@ -128,7 +128,7 @@ const SEARCH_FIELDS = [
 const PAGE_SIZE = 50;
 // 1人物の中で最初から見せる史料の数（それより多い分は「他N件の史料を表示」に畳む）
 const ENTRIES_SHOWN = 3;
-const SEP = '<span class="fts-sep">／</span>';
+const SEP = '<span class="search-sep">／</span>';
 
 let allResults = [];          // 一致した人物 [{doc: 索引の文書番号, members: 条件を満たした史料の番号のSet}]
 let shownResults = [];        // そのうち史料の種類の絞り込みに合うもの
@@ -186,12 +186,12 @@ async function doSearch(kind = -1, page = 1) {
   const my = ++searchToken;
   searchBtn.disabled = true;
   browse.hidden = true;
-  resultsArea.innerHTML = '<div class="fts-status"><span class="fts-spinner"></span>検索中…</div>';
+  resultsArea.innerHTML = '<div class="search-status"><span class="search-spinner"></span>検索中…</div>';
 
   try {
     await personIndex.load();
     const criteria = SEARCH_FIELDS.flatMap(([, key, type]) =>
-      FullTextSearch.queryTerms(personIndex, inputs[key]).map(term => [type, term]));
+      Search.queryTerms(personIndex, inputs[key]).map(term => [type, term]));
     const found = criteria.length ? await findPersons(criteria) : [];
     if (my !== searchToken) return;
     allResults = found;
@@ -202,7 +202,7 @@ async function doSearch(kind = -1, page = 1) {
     currentPage = page;
     await renderPage();
   } catch (err) {
-    if (my === searchToken) resultsArea.innerHTML = `<div class="fts-status fts-error">エラーが発生しました: ${escapeHtml(err.message)}</div>`;
+    if (my === searchToken) resultsArea.innerHTML = `<div class="search-status search-error">エラーが発生しました: ${escapeHtml(err.message)}</div>`;
   } finally {
     if (my === searchToken) searchBtn.disabled = false;
   }
@@ -260,7 +260,7 @@ async function goToPage(page) {
 
 // 原文を HTML にして検索語の箇所を強調する（照合は検索と同じ正規化）
 function hl(text) {
-  return FullTextSearch.markHtml(personIndex, text, currentTerms);
+  return Search.markHtml(personIndex, text, currentTerms);
 }
 
 // 検索条件の表示（「野村」 氏名「…」）
@@ -271,7 +271,7 @@ function queryLabel() {
 
 function renderResults(pageResults, kindCounts, totalPages) {
   if (!allResults.length) {
-    resultsArea.innerHTML = `<div class="fts-empty">${queryLabel()} に一致する人物はありませんでした</div>`;
+    resultsArea.innerHTML = `<div class="search-empty">${queryLabel()} に一致する人物はありませんでした</div>`;
     return;
   }
   let options = `<option value="-1">すべての資料（${allResults.length}人）</option>`;
@@ -279,16 +279,16 @@ function renderResults(pageResults, kindCounts, totalPages) {
     if (kindCounts[k]) options += `<option value="${k}"${k === currentKind ? ' selected' : ''}>${escapeHtml(label)}（${kindCounts[k]}人）</option>`;
   });
   let html = `
-    <div class="fts-head">
+    <div class="search-head">
       <span>${queryLabel()} — 全${allResults.length}人${currentKind >= 0 ? `（うち${shownResults.length}人を表示）` : ''}</span>
-      <select class="fts-group" id="kindSelect" aria-label="資料の種類で絞り込み">${options}</select>
+      <select class="search-group" id="kindSelect" aria-label="資料の種類で絞り込み">${options}</select>
     </div>
-    <ol class="fts-list">`;
+    <ol class="search-list">`;
   for (const r of pageResults) html += renderPerson(r);
   html += '</ol>';
   if (totalPages > 1) {
     html += `
-      <div class="fts-pager">
+      <div class="search-pager">
         <button type="button" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>← 前へ</button>
         <span>${currentPage} / ${totalPages} ページ</span>
         <button type="button" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>次へ →</button>
@@ -308,10 +308,10 @@ function renderPerson({ doc, members }) {
   // 畳むのが1件だけなら全部見せる（「他1件」を開く手間のほうが大きい）
   const shown = rows.length > ENTRIES_SHOWN + 1 ? ENTRIES_SHOWN : rows.length;
   let html = `
-    <li class="fts-item person-item">
-      <div class="fts-item-head">
+    <li class="search-item person-item">
+      <div class="search-item-head">
         <span class="person-name">${hl(name || '（氏名なし）')}</span>
-        ${person.entries.length > 1 ? `<span class="fts-badge">史料${person.entries.length}件</span>` : ''}
+        ${person.entries.length > 1 ? `<span class="search-badge">史料${person.entries.length}件</span>` : ''}
         <span class="person-tools">
           <button type="button" class="person-copy-btn" data-copy="${doc}" title="この人物の情報をテキストでコピー">コピー</button>
         </span>
@@ -346,9 +346,9 @@ function renderEntryRow(entry, hit, canonicalName) {
   const events = entry.events || [];
   const eventText = ev => [ev.date, ev.description].filter(Boolean).join(' ');
   let snip = hit && currentTerms.length
-    ? FullTextSearch.snippetsHtml(personIndex, events.map(eventText).join('\x1f'), currentTerms).html
+    ? Search.snippetsHtml(personIndex, events.map(eventText).join('\x1f'), currentTerms).html
     : '';
-  if (!snip && events.length) snip = `<div class="fts-snip entry-first-event">${hl(eventText(events[0]).replace(/\n/g, ' '))}</div>`;
+  if (!snip && events.length) snip = `<div class="search-snip entry-first-event">${hl(eventText(events[0]).replace(/\n/g, ' '))}</div>`;
   const all = events.length > 1 || (events.length === 1 && (events[0].description || '').includes('\n'))
     ? `<details class="entry-events"><summary>略歴（${events.length}件）を表示</summary>${renderEvents(events)}</details>`
     : '';
@@ -362,7 +362,7 @@ function renderEntryRow(entry, hit, canonicalName) {
     </li>`;
 }
 
-// 略歴の全件（資料ページの人物カードと同じ表。generate_docs.py の render_events）
+// 略歴の全件（資料ページの人物カードと同じ表。build.py の render_events）
 function renderEvents(events) {
   const items = events.map(ev => {
     const desc = formatDescHtml(hl(ev.description || ''));
@@ -374,7 +374,7 @@ function renderEvents(events) {
 }
 
 // 資料ページ（docs/{資料番号}.html）がある史料なら、その人物の位置へのリンク。
-// ?q= を付けるので、資料ページ側で検索語が強調される（fulltext.js の highlightFromQuery）
+// ?q= を付けるので、資料ページ側で検索語が強調される（search.js の highlightFromQuery）
 const DOC_STEMS = new Set([...document.querySelectorAll('#browseBody a[href^="docs/"]')]
   .map(a => a.getAttribute('href').replace(/^docs\/|\.html$/g, '')));
 // 府県史料は原本URLの資料番号、県令集覧・人物写真帖は ID（{資料番号}-0001）の資料番号で探す
@@ -504,13 +504,13 @@ addEventListener('pagehide', () => {
   if (location.hash.startsWith('#search?')) history.replaceState(Object.assign({}, history.state, { resultScrollY: scrollY }), '');
 });
 
-// URL の検索状態を復元する（#search?…。以前の全文検索タブの #fulltext?q=… はフリーワードとして扱う）。
+// URL の検索状態を復元する（#search?…）。
 // #browse（資料ページの「資料一覧」リンク）は資料一覧の位置へ
 (() => {
   const h = location.hash;
-  const m = h.match(/^#(search|fulltext)\?(.*)$/);
+  const m = h.match(/^#search\?(.*)$/);
   if (m) {
-    const p = new URLSearchParams(m[2]);
+    const p = new URLSearchParams(m[1]);
     for (const [id, key] of SEARCH_FIELDS) document.getElementById(id).value = p.get(key) || '';
     // 欄を指定した検索なら、その欄が見えるように開いておく
     if (SEARCH_FIELDS.some(([id, key]) => key !== 'q' && p.get(key))) fieldSearch.open = true;
